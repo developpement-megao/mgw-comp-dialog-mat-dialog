@@ -11,6 +11,11 @@
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
     "isolatedModules": true,
+    "paths": {
+      "ngx-mgw-dialog-mat-dialog": [
+        "./dist/ngx-mgw-dialog-mat-dialog"
+      ]
+    },
     "esModuleInterop": true,
     "sourceMap": true,
     "declaration": false,
