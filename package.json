@@ -5,10 +5,14 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build-lib": "ng build ngx-mgw-dialog-mat-dialog",
+    "build-test": "ng build mgw-dialog-mat-dialog-test",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "lint": "ng lint",
-    "nvmrc": "node -v > .nvmrc"
+    "nvmrc": "node -v > .nvmrc",
+    "npm-publish": "cd dist/ngx-mgw-dialog-mat-dialog && npm publish",
+    "publish": "npm run build-lib && npm run npm-publish"
   },
   "private": true,
   "dependencies": {
