@@ -4,12 +4,8 @@ import { Component } from '@angular/core';
   selector: 'lib-ngx-mgw-dialog-mat-dialog',
   standalone: true,
   imports: [],
-  template: `
-    <p>
-      ngx-mgw-dialog-mat-dialog works!
-    </p>
-  `,
-  styles: ``
+  templateUrl: './ngx-mgw-dialog-mat-dialog.component.html',
+  styleUrl: './ngx-mgw-dialog-mat-dialog.component.scss'
 })
 export class NgxMgwDialogMatDialogComponent {
 
