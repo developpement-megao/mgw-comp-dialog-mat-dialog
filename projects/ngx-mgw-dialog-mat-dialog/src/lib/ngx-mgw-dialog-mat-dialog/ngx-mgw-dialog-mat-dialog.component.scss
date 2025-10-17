@@ -1,0 +1,57 @@
+.bloc-coupe {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  &.only-one-line {
+    white-space: nowrap;
+  }
+}
+
+.bloc-coupe-hori {
+  @extend .bloc-coupe;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.bloc-flex-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mat-mdc-dialog-title::before {
+  height: 0;
+}
+
+.dialog-title-bloc {
+  padding: 8px 24px;
+  margin: 1px 0;
+  &.no-close-button {
+    padding: 16px 24px;
+  }
+  &.is-template {
+    padding: 0 24px;
+  }
+  h2.dialog-title {
+    padding: 0;
+    margin: 0;
+  }
+  button.title-button {
+    margin-left: 7px;
+  }
+}
+
+.dialog-content-base {
+  white-space: pre-line;
+}
+
+.dialog-content-base {
+  h3,
+  p {
+    &:first-child {
+      margin-top: 0;
+    }
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}

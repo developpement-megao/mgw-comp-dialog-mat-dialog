@@ -1,1 +1,106 @@
-<p>ngx-mgw-dialog-mat-dialog works!</p>
+@if (dataTitleTexte || dataTitleHtml || dataTitleTemplate || !hasContent) {
+  <div class="bloc-flex-line dialog-title-bloc" [class.no-close-button]="data?.noCloseButton && hasContent" [class.is-template]="dataTitleTemplate">
+    <div class="bloc-coupe">
+      @if (dataTitleTemplate) {
+        <ng-container [ngTemplateOutlet]="dataTitleTemplate" />
+      } @else {
+        <h2 mat-dialog-title class="bloc-coupe dialog-title">
+          @if (dataTitleTexte) {{{ dataTitleTexte }}} @else if (dataTitleHtml) {
+            <span [innerHTML]="dataTitleHtml"></span>
+          }
+        </h2>
+      }
+    </div>
+    @if (data?.noCloseButton === undefined || !hasContent) {
+      <button mat-icon-button type="button" aria-label="Fermer la fenêtre" class="title-button" (click)="onCloseClick()">
+        <mat-icon svgIcon="close" />
+      </button>
+    }
+  </div>
+}
+@if (dataContent || dataContentTexte || dataContentHtml || dataContentTemplate) {
+  <mat-dialog-content class="dialog-content-base">
+    @if (dataContentTexte) {{{ dataContentTexte }}} @else if (dataContentHtml) {
+      <span [innerHTML]="dataContentHtml"></span>
+    } @else if (dataContentTemplate) {
+      <ng-container [ngTemplateOutlet]="dataContentTemplate" />
+    } @else if (dataContent?.length) {
+      <form class="form-content" [formGroup]="data?.formGroup ?? dataNoFormGroup">
+        @for (item of dataContent; track $index) {
+          @if (item.subtitle) {
+            <h3>{{ item.subtitle }}</h3>
+          }
+          @if (item.rubriqueTexte) {
+            <p [ngStyle]="item.rubriqueStyle">{{ item.rubriqueTexte }}</p>
+          } @else if (item.rubriqueHtml) {
+            <p [ngStyle]="item.rubriqueStyle">
+              <span [innerHTML]="item.rubriqueHtml"></span>
+            </p>
+          }
+          @if (item.formElems?.length) {
+            @for (itemForm of item.formElems; track itemForm.contentIndex + '-' + $index) {
+              @if (itemForm.inputType === inputTypeCheckbox) {
+                <mat-checkbox [formControlName]="itemForm.formElemName" [labelPosition]="itemForm.labelPosition ?? labelPositionAfter">
+                  {{ itemForm.label || itemForm.formElemName }}
+                </mat-checkbox>
+              } @else {
+                <mat-form-field [ngStyle]="itemForm.style">
+                  <mat-label>{{ itemForm.label || itemForm.formElemName }}</mat-label>
+                  @if (itemForm.inputType === inputTypeTextarea) {
+                    <textarea matInput [formControlName]="itemForm.formElemName" [placeholder]="itemForm.placeholder ?? ''" [readonly]="itemForm.readonly"></textarea>
+                  } @else if (itemForm.isSelect) {
+                    @if (itemForm.isSelect !== true) {
+                      <mat-select multiple [formControlName]="itemForm.formElemName" [placeholder]="itemForm.placeholder ?? ''">
+                        @for (values of itemForm.values; track values.texte) {
+                          <mat-option [value]="values.value">{{ values.texte }}</mat-option>
+                        }
+                      </mat-select>
+                    } @else {
+                      <mat-select [formControlName]="itemForm.formElemName" [placeholder]="itemForm.placeholder ?? ''">
+                        @if (itemForm.selectResetText) {
+                          <mat-option>{{ itemForm.selectResetText }}</mat-option>
+                        }
+                        @for (values of itemForm.values; track values.texte) {
+                          <mat-option [value]="values.value">{{ values.texte }}</mat-option>
+                        }
+                      </mat-select>
+                    }
+                  } @else {
+                    <input
+                      matInput
+                      [type]="itemForm.inputType ?? inputTypeText"
+                      [formControlName]="itemForm.formElemName"
+                      [placeholder]="itemForm.placeholder ?? ''"
+                      [readonly]="itemForm.readonly"
+                      [maxlength]="itemForm.maxlength ?? null" />
+                  }
+                  @if (itemForm.textPrefix) {
+                    <span matTextPrefix>{{ itemForm.textPrefix }}</span>
+                  }
+                  @if (itemForm.textSuffix) {
+                    <span matTextSuffix>{{ itemForm.textSuffix }}</span>
+                  }
+                  @if (itemForm.errorLabel && data?.formGroup?.get(itemForm.formElemName)?.invalid) {
+                    <mat-error>{{ itemForm.errorLabel }}</mat-error>
+                  }
+                  @if (itemForm.hintText) {
+                    <mat-hint>{{ itemForm.hintText }}</mat-hint>
+                  }
+                </mat-form-field>
+              }
+            }
+          }
+        }
+      </form>
+    }
+  </mat-dialog-content>
+}
+@if (dataActions) {
+  <mat-dialog-actions [align]="data?.actionsAlign ?? actionAlignEnd">
+    @for (item of dataActions | keyvalue: noKeyvalueSort; track item.key) {
+      <button name="btn-{{ item.key }}" mat-button type="button" [color]="item.value.color" [tabindex]="item.value.tabindex" (click)="onActionClick(item.key)">
+        {{ item.value.libelle || item.key }}
+      </button>
+    }
+  </mat-dialog-actions>
+}
