@@ -69,7 +69,7 @@ export interface MessageHtmlParam extends MessageHtml {
 export interface DialogContent<K extends string = string> {
   subtitle?: string;
   rubrique?: string | MessageHtmlParam;
-  formElem?: K;
+  formElem?: K | K[];
 }
 
 interface DialogContentTexteHtmlRubriqueStyle {
@@ -150,8 +150,8 @@ export type DialogActionsAlignValues = (typeof ACTIONS_ALIGN_VAL)[number];
 export interface NgxMgwDialogMatDialogData<
   KAction extends KeyOfRecordActions = string,
   TValue = unknown,
-  TControl extends { [K in keyof TControl]: AbstractControl<TValue> } = any,
-  KForm extends keyof TControl & string = any,
+  TControl extends { [K in keyof TControl]: AbstractControl<TValue> } = never,
+  KForm extends keyof TControl & string = never,
   KFormElem extends KForm = KForm
 > {
   title?: string | MessageHtml | TemplateRef<unknown>;
@@ -241,8 +241,8 @@ function isStringNotEmpty(value: string | undefined): boolean {
 export class NgxMgwDialogMatDialogComponent<
   KA extends KeyOfRecordActions = string,
   T = unknown,
-  TC extends { [K in keyof TC]: AbstractControl<T> } = any,
-  KF extends keyof TC & string = any,
+  TC extends { [K in keyof TC]: AbstractControl<T> } = never,
+  KF extends keyof TC & string = never,
   KFE extends KF = KF
 > {
   readonly dialogRef: MatDialogRef<NgxMgwDialogMatDialogComponent<KA, T, TC, KF, KFE>, NgxMgwDialogMatDialogResult<KA>> = inject(
@@ -254,6 +254,8 @@ export class NgxMgwDialogMatDialogComponent<
 
   private readonly sanitizer = inject(DomSanitizer);
 
+  private readonly dataFormElems: ReadonlyMap<KF, DialogFormElemConfig>;
+
   readonly actionAlignEnd = ACTION_ALIGN_END;
 
   readonly inputTypeText = INPUT_TYPE_TEXT;
@@ -261,6 +263,8 @@ export class NgxMgwDialogMatDialogComponent<
   readonly inputTypeCheckbox = INPUT_TYPE_CHECKBOX;
 
   readonly labelPositionAfter = 'after';
+
+  readonly dataNoFormGroup: FormGroup = new FormGroup({});
 
   readonly dataTitleTexte: string | undefined;
   readonly dataTitleHtml: SafeHtml | undefined;
@@ -272,10 +276,6 @@ export class NgxMgwDialogMatDialogComponent<
   readonly dataContent: ReadonlyArray<DialogContentTexteHtml<KFE>> | undefined;
 
   readonly dataActions: ReadonlyMap<KA, DialogActionButtonData> | undefined;
-
-  readonly dataFormElems: ReadonlyMap<KF, DialogFormElemConfig>;
-
-  readonly dataNoFormGroup: FormGroup = new FormGroup({});
 
   hasContent: boolean = false;
 
@@ -379,12 +379,13 @@ export class NgxMgwDialogMatDialogComponent<
     const rubriqueStyle: DialogContentTexteHtmlRubriqueStyle | undefined =
       typeof dialogContent.rubrique === 'string' ? undefined : { color: dialogContent.rubrique?.labelColor, 'text-align': dialogContent.rubrique?.textAlign };
     const dialogContentFormElem: K | K[] = dialogContent.formElem ?? [];
+    const formElemsConfig: Array<RubriqueFormElemConfig<K>> = Array.isArray(dialogContentFormElem)
+      ? dialogContentFormElem.map<RubriqueFormElemConfig<K>>((fe) => this.getRubriqueFormElemConfig(fe, index))
+      : [this.getRubriqueFormElemConfig(dialogContentFormElem, index)];
     const resuTexteHtml: DialogContentTexteHtml<K> = {
       subtitle: dialogContent.subtitle,
       rubriqueStyle,
-      formElems: Array.isArray(dialogContentFormElem)
-        ? dialogContentFormElem.map<RubriqueFormElemConfig<K>>((fe) => this.getRubriqueFormElemConfig(fe, index))
-        : [this.getRubriqueFormElemConfig(dialogContentFormElem, index)]
+      formElems: formElemsConfig.filter((fef) => this.data?.formGroup?.get(fef.formElemName))
     };
     if (typeof dialogContent.rubrique !== 'string' && dialogContent.rubrique?.contenu && dialogContent.rubrique.isHtml) {
       const rubriqueHtml = this.sanitizer.bypassSecurityTrustHtml(dialogContent.rubrique.contenu);

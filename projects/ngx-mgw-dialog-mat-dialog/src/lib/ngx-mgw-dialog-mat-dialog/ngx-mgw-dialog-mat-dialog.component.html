@@ -39,55 +39,57 @@
           }
           @if (item.formElems?.length) {
             @for (itemForm of item.formElems; track itemForm.contentIndex + '-' + $index) {
-              @if (itemForm.inputType === inputTypeCheckbox) {
-                <mat-checkbox [formControlName]="itemForm.formElemName" [labelPosition]="itemForm.labelPosition ?? labelPositionAfter">
-                  {{ itemForm.label || itemForm.formElemName }}
-                </mat-checkbox>
-              } @else {
-                <mat-form-field [ngStyle]="itemForm.style">
-                  <mat-label>{{ itemForm.label || itemForm.formElemName }}</mat-label>
-                  @if (itemForm.inputType === inputTypeTextarea) {
-                    <textarea matInput [formControlName]="itemForm.formElemName" [placeholder]="itemForm.placeholder ?? ''" [readonly]="itemForm.readonly"></textarea>
-                  } @else if (itemForm.isSelect) {
-                    @if (itemForm.isSelect !== true) {
-                      <mat-select multiple [formControlName]="itemForm.formElemName" [placeholder]="itemForm.placeholder ?? ''">
-                        @for (values of itemForm.values; track values.texte) {
-                          <mat-option [value]="values.value">{{ values.texte }}</mat-option>
-                        }
-                      </mat-select>
+              <div>
+                @if (itemForm.inputType === inputTypeCheckbox) {
+                  <mat-checkbox [formControlName]="itemForm.formElemName" [labelPosition]="itemForm.labelPosition ?? labelPositionAfter">
+                    {{ itemForm.label || itemForm.formElemName }}
+                  </mat-checkbox>
+                } @else {
+                  <mat-form-field [ngStyle]="itemForm.style">
+                    <mat-label>{{ itemForm.label || itemForm.formElemName }}</mat-label>
+                    @if (itemForm.inputType === inputTypeTextarea) {
+                      <textarea matInput [formControlName]="itemForm.formElemName" [placeholder]="itemForm.placeholder ?? ''" [readonly]="itemForm.readonly"></textarea>
+                    } @else if (itemForm.isSelect) {
+                      @if (itemForm.isSelect !== true) {
+                        <mat-select multiple [formControlName]="itemForm.formElemName" [placeholder]="itemForm.placeholder ?? ''">
+                          @for (values of itemForm.values; track values.texte) {
+                            <mat-option [value]="values.value">{{ values.texte }}</mat-option>
+                          }
+                        </mat-select>
+                      } @else {
+                        <mat-select [formControlName]="itemForm.formElemName" [placeholder]="itemForm.placeholder ?? ''">
+                          @if (itemForm.selectResetText) {
+                            <mat-option>{{ itemForm.selectResetText }}</mat-option>
+                          }
+                          @for (values of itemForm.values; track values.texte) {
+                            <mat-option [value]="values.value">{{ values.texte }}</mat-option>
+                          }
+                        </mat-select>
+                      }
                     } @else {
-                      <mat-select [formControlName]="itemForm.formElemName" [placeholder]="itemForm.placeholder ?? ''">
-                        @if (itemForm.selectResetText) {
-                          <mat-option>{{ itemForm.selectResetText }}</mat-option>
-                        }
-                        @for (values of itemForm.values; track values.texte) {
-                          <mat-option [value]="values.value">{{ values.texte }}</mat-option>
-                        }
-                      </mat-select>
+                      <input
+                        matInput
+                        [type]="itemForm.inputType ?? inputTypeText"
+                        [formControlName]="itemForm.formElemName"
+                        [placeholder]="itemForm.placeholder ?? ''"
+                        [readonly]="itemForm.readonly"
+                        [maxlength]="itemForm.maxlength ?? null" />
                     }
-                  } @else {
-                    <input
-                      matInput
-                      [type]="itemForm.inputType ?? inputTypeText"
-                      [formControlName]="itemForm.formElemName"
-                      [placeholder]="itemForm.placeholder ?? ''"
-                      [readonly]="itemForm.readonly"
-                      [maxlength]="itemForm.maxlength ?? null" />
-                  }
-                  @if (itemForm.textPrefix) {
-                    <span matTextPrefix>{{ itemForm.textPrefix }}</span>
-                  }
-                  @if (itemForm.textSuffix) {
-                    <span matTextSuffix>{{ itemForm.textSuffix }}</span>
-                  }
-                  @if (itemForm.errorLabel && data?.formGroup?.get(itemForm.formElemName)?.invalid) {
-                    <mat-error>{{ itemForm.errorLabel }}</mat-error>
-                  }
-                  @if (itemForm.hintText) {
-                    <mat-hint>{{ itemForm.hintText }}</mat-hint>
-                  }
-                </mat-form-field>
-              }
+                    @if (itemForm.textPrefix) {
+                      <span matTextPrefix>{{ itemForm.textPrefix }}</span>
+                    }
+                    @if (itemForm.textSuffix) {
+                      <span matTextSuffix>{{ itemForm.textSuffix }}</span>
+                    }
+                    @if (itemForm.errorLabel && data?.formGroup?.get(itemForm.formElemName)?.invalid) {
+                      <mat-error>{{ itemForm.errorLabel }}</mat-error>
+                    }
+                    @if (itemForm.hintText) {
+                      <mat-hint>{{ itemForm.hintText }}</mat-hint>
+                    }
+                  </mat-form-field>
+                }
+              </div>
             }
           }
         }

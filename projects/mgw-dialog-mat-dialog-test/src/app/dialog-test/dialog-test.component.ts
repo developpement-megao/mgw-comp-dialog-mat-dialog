@@ -55,30 +55,12 @@ export class DialogTestComponent {
     };
 
     this.ngxMgwDialogMatDialogService
-      .openDialogForm(
-[
-            'coucou\nJe saute une ligne',
-            {
-              subtitle: 'Develop across all platforms',
-              rubrique:
-                'Learn one way to build <b>applications</b> with Angular and reuse your code and abilities to build apps for any deployment target. For web, mobile web, native mobile and native desktop.'
-                ,
-                formElem: 'animal'
-            },
-            {
-              subtitle: 'avec html',
-              rubrique: { contenu: '<b>Gras</b><br/><br/>Je viens de faire un double br.\n\nEt la double n', isHtml: true, labelColor: 'red',textAlign: 'end' }
-            },
-            {
-              subtitle: 'avec obket html \nhtml mais isHtml false',
-              rubrique: { contenu: 'Pas de html', isHtml: false, textAlign: 'center' }
-            },
-            {
-              rubrique: { contenu: 'Sans <i>subtitle</i> mais avec <u>html</u>', isHtml: true }
-            },
-            'Je <b>le</b> suis'
-          ],
-{
+      .openDialogFormConfig(
+        {
+          rubrique: { contenu: 'Sans <i>subtitle</i> mais avec <u>html</u>', isHtml: true },
+          formElem: 'animal'
+        },
+        {
           animal: {
             errorLabel: 'Saisie !!!!',
             hintText: 'Chat, chien, ...',
@@ -90,19 +72,17 @@ export class DialogTestComponent {
             selectResetText: ' * Aucun'
           }
         },
-
         this.testFormGroup,
- {
-            title: { contenu: this.name || 'Install <b>Angular</b>', isHtml: true },
-            noCloseButton: true
+        {
+          actionsConfig: {
+            actions,
+            actionsAlign: 'center',
+            autoFocus: 'b'
           },
-
-        actions,
-        'b',
-        'center',
-{
+          dialogConfig: {
             width: '450px'
           }
+        }
       )
       .afterClosed()
       .subscribe(result => {
