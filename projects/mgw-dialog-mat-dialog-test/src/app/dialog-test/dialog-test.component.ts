@@ -57,7 +57,7 @@ export class DialogTestComponent {
     this.ngxMgwDialogMatDialogService
       .openDialogFormConfig(
         {
-          rubrique: { contenu: 'Sans <i>subtitle</i> mais avec <u>html</u>', isHtml: true },
+          rubrique: { contenu: 'Sans <i>subtitle</i> mais avec <u>html</u>', isHtml: true, type: { style: 'error',  noColor: true }, labelColor: '#997711' },
           formElem: 'animal'
         },
         {

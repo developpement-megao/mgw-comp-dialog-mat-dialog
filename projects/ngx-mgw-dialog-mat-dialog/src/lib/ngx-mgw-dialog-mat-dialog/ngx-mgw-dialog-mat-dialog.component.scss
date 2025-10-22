@@ -55,3 +55,16 @@
     }
   }
 }
+
+.icon-with-text {
+  display: flex;
+  align-items: center;
+}
+
+.mat-icon.message-icon {
+  width: 20px;
+  height: 18px;
+  flex: 0 0 auto;
+  margin-right: 0.2em;
+  padding-bottom: 1.5px;
+}

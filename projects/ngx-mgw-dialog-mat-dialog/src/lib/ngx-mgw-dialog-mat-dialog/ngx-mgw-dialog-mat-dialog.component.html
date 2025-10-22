@@ -31,10 +31,23 @@
             <h3>{{ item.subtitle }}</h3>
           }
           @if (item.rubriqueTexte) {
-            <p [ngStyle]="item.rubriqueStyle">{{ item.rubriqueTexte }}</p>
+            <p [ngStyle]="item.rubriqueStyle">
+              @if (item.rubriqueIcone) {
+                <span class="icon-with-text">
+                  <mat-icon class="message-icon" aria-hidden="false" [attr.aria-label]="item.rubriqueIcone.aria" [svgIcon]="item.rubriqueIcone.icon" />{{ item.rubriqueTexte }}
+                </span>
+              } @else {{{ item.rubriqueTexte }}}
+            </p>
           } @else if (item.rubriqueHtml) {
             <p [ngStyle]="item.rubriqueStyle">
-              <span [innerHTML]="item.rubriqueHtml"></span>
+              @if (item.rubriqueIcone) {
+                <span class="icon-with-text">
+                  <mat-icon class="message-icon" aria-hidden="false" [attr.aria-label]="item.rubriqueIcone.aria" [svgIcon]="item.rubriqueIcone.icon" />
+                  <span [innerHTML]="item.rubriqueHtml"></span>
+                </span>
+              } @else {
+                <span [innerHTML]="item.rubriqueHtml"></span>
+              }
             </p>
           }
           @if (item.formElems?.length) {

@@ -12,11 +12,81 @@ import { MatIconModule, MatIconRegistry } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 
 const SVG_ICON_CLOSE = `
-  <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px">
+  <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px">
     <path d="M0 0h24v24H0z" fill="none"/>
     <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
   </svg>
 `;
+
+const SVG_ICONS = {
+  success: {
+    name: 'check_circle_outline',
+    icon: `
+      <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px">
+        <path d="M0 0h24v24H0V0zm0 0h24v24H0V0z" fill="none"/>
+        <path d="M16.59 7.58L10 14.17l-3.59-3.58L5 12l5 5 8-8zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
+      </svg>
+    `,
+    aria: 'Image réussite'
+  },
+  info: {
+    name: 'info_outline',
+    icon: `
+      <svg xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24" height="20px" viewBox="0 0 24 24" width="20px">
+        <g>
+          <path d="M0,0h24v24H0V0z" fill="none"/>
+          <path d="M11,7h2v2h-2V7z M11,11h2v6h-2V11z M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M12,20 c-4.41,0-8-3.59-8-8s3.59-8,8-8s8,3.59,8,8S16.41,20,12,20z"/>
+        </g>
+      </svg>
+    `,
+    aria: 'Image information'
+  },
+  question: {
+    name: 'help_outline',
+    icon: `
+      <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px">
+        <path d="M0 0h24v24H0z" fill="none"/>
+        <path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/>
+      </svg>
+    `,
+    aria: 'Image question'
+  },
+  error: {
+    name: 'error_outline',
+    icon: `
+      <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px">
+        <path d="M0 0h24v24H0V0z" fill="none"/>
+        <path d="M11 15h2v2h-2zm0-8h2v6h-2zm.99-5C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
+      </svg>
+    `,
+    aria: 'Image erreur'
+  },
+  warning: {
+    name: 'warning_amber',
+    icon: `
+      <svg xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24" height="20px" viewBox="0 0 24 24" width="20px">
+        <g>
+          <rect fill="none" height="24" width="24"/>
+        </g>
+        <g><g><g>
+          <path d="M12 5.99 19.53 19H4.47L12 5.99M12 2 1 21h22L12 2z"/>
+          <polygon points="13,16 11,16 11,18 13,18"/>
+          <polygon points="13,10 11,10 11,15 13,15"/>
+        </g></g></g>
+      </svg>
+    `,
+    aria: 'Image avertissement'
+  }
+};
+
+const MESSAGE_TYPE_STYLE_VALUES = [
+  { style: 'none', icon: undefined, color: undefined },
+  { style: 'success', icon: SVG_ICONS.success, color: '#1FAB4C' },
+  { style: 'info', icon: SVG_ICONS.info, color: undefined },
+  { style: 'question', icon: SVG_ICONS.question, color: undefined },
+  { style: 'error', icon: SVG_ICONS.error, color: '#C21C10' },
+  { style: 'warning', icon: SVG_ICONS.warning, color: '#F0890C' }
+] as const;
 
 const ACTION_ALIGN_END = 'end';
 
@@ -29,6 +99,49 @@ const INPUT_TYPE_CHECKBOX = 'checkbox';
 type KeyOfRecord = string | number | symbol;
 
 export type KeyOfRecordActions = Exclude<KeyOfRecord, symbol>;
+
+/**
+ * Types prédéfinis pour le style du message.
+ * Chaque style correspond à un thème visuel spécifique (couleur, icône) :
+ * - 'none' : aucun style
+ * - 'success' : style pour message de réussite avec icône check et couleur verte
+ * - 'info' : style pour message information avec icône info
+ * - 'question' : style pour message question avec icône help
+ * - 'error' : style pour message erreur avec icône error et couleur rouge
+ * - 'warning' : style pour message avertissement avec icône warning et couleur orange
+ */
+export type MessageTypeStyle = (typeof MESSAGE_TYPE_STYLE_VALUES)[number]['style'];
+
+/**
+ * Définit le type, le style et les options d'affichage d'un message.
+ * Cette interface permet de configurer l'apparence visuelle du message,
+ * notamment l'icône et la gestion des couleurs associées au style.
+ */
+export interface MessageType {
+  /**
+   * Style visuel du message (none, info, success, error, warning, question).
+   * Détermine le thème appliqué (couleur, icône).
+   * @example "success", "warning", "info"
+   * @see {@link MessageTypeStyle}
+   */
+  style: MessageTypeStyle;
+
+  /**
+   * Indique si une icône doit être affichée avec le message.
+   * - `true` : Affiche une icône associée au style (check (success), warning, info, error, help (question)). Par omission (valeur `undefined`), l'icône du style est affichée.
+   * - `false` : Aucune icône n'est affichée.
+   * @default undefined true
+   */
+  icon?: boolean;
+
+  /**
+   * Indique si les couleurs par défaut du style doivent être désactivées.
+   * - `true` : Le message n'utilisera pas les couleurs associées au `style`.
+   * - `false` : Par omission les couleurs par défaut du style seront appliquées.
+   * @default undefined false (par omission, les couleurs du style sont appliquées)
+   */
+  noColor?: true;
+}
 
 /** Représente un message qui peut être soit du texte brut, soit du contenu HTML déjà formaté. */
 export interface MessageHtml {
@@ -54,6 +167,25 @@ export interface MessageHtml {
  * {@link MessageHtml}
  */
 export interface MessageHtmlParam extends MessageHtml {
+  /**
+   * Style du message ou type du message.
+   *
+   * Soit une chaîne de caractères de type `MessageTypeStyle` pour un style prédéfini :
+   * - 'none' : aucun style
+   * - 'success' : style pour message de réussite avec icône check et couleur verte
+   * - 'info' : style pour message information avec icône info
+   * - 'question' : style pour message question avec icône help
+   * - 'error' : style pour message erreur avec icône error et couleur rouge
+   * - 'warning' : style pour message avertissement avec icône warning et couleur orange
+   *
+   * soit un objet de configuration du style de type `MessageType` permettant de définir le style prédéfini voulu (icône et couleur).
+   * @example "none", "success", "warning", "info"
+   * @default undefined "none"
+   * @see {@link MessageTypeStyle}
+   * @see {@link MessageType}
+   */
+  type?: MessageTypeStyle | MessageType;
+
   /**
    * Couleur personnalisée du texte.
    * Accepte une valeur CSS valide (ex: "#ffffff", "yellow", "rgba(180, 196, 40, 0.87)").
@@ -125,12 +257,18 @@ interface RubriqueFormElemConfig<K extends string> extends Omit<DialogFormElemCo
   style?: RubriqueFormElemConfigStyle;
 }
 
+interface DialogContentTexteHtmlRubriqueIcone {
+  icon: string;
+  aria: string;
+}
+
 /** {@link DialogContent} */
 interface DialogContentTexteHtml<K extends string> {
   subtitle: string | undefined;
   rubriqueTexte?: string;
   rubriqueHtml?: SafeHtml;
-  rubriqueStyle: DialogContentTexteHtmlRubriqueStyle | undefined;
+  rubriqueStyle?: DialogContentTexteHtmlRubriqueStyle;
+  rubriqueIcone?: DialogContentTexteHtmlRubriqueIcone;
   formElems: ReadonlyArray<RubriqueFormElemConfig<K>> | undefined;
 }
 
@@ -216,6 +354,40 @@ function isStringNotEmpty(value: string | undefined): boolean {
   return false;
 }
 
+function objectIsMessageType(value: unknown): value is MessageType {
+  // On teste si la valeur est un objet et si elle n'est pas null (la valeur null est de type object)
+  // si l'objet contient les champs style et icon et que les types et valeurs possibles correspondent alors on considère que l'objet est de type MessageType
+  if (typeof value === 'object' && value !== null && 'style' in value && MESSAGE_TYPE_STYLE_VALUES.some((mtsv) => mtsv.style === value.style)) {
+    return true;
+  }
+  return false;
+}
+
+function getMessageTypeStyle(messageTypeStyle: MessageTypeStyle | MessageType): MessageType {
+  const messageType: MessageType = objectIsMessageType(messageTypeStyle) ? messageTypeStyle : { style: messageTypeStyle, icon: true };
+  return messageType;
+}
+
+function getRubriqueDialogContentTexteHtml<K extends string>(rubriqueMessageParam: MessageHtmlParam | undefined): Pick<DialogContentTexteHtml<K>, 'rubriqueStyle' | 'rubriqueIcone'> {
+  // si on n'a pas de couleur forcé on prend la couleur sur le type
+  const messageType: MessageType | undefined = rubriqueMessageParam?.type ? getMessageTypeStyle(rubriqueMessageParam.type) : undefined;
+  const messageTypeStyle = messageType ? MESSAGE_TYPE_STYLE_VALUES.find((mtsv) => mtsv.style === messageType.style) : undefined;
+  const messageTypeStyleColor = messageType?.noColor === true ? undefined : messageTypeStyle?.color;
+  const color = rubriqueMessageParam?.labelColor ?? messageTypeStyleColor;
+  const messageTypeStyleIcon = messageType?.icon === false ? undefined : messageTypeStyle?.icon;
+  // mise en place style rubrique si couleur ou alignement défini
+  return {
+    rubriqueStyle: {
+      color,
+      'text-align': rubriqueMessageParam?.textAlign
+    },
+    rubriqueIcone: messageTypeStyleIcon ? {
+      icon: messageTypeStyleIcon.name,
+      aria: messageTypeStyleIcon.aria
+    } : undefined
+  }
+}
+
 @Component({
   selector: 'lib-ngx-mgw-dialog-mat-dialog',
   standalone: true,
@@ -283,6 +455,11 @@ export class NgxMgwDialogMatDialogComponent<
     // génération icones svg
     const iconRegistry = inject(MatIconRegistry);
     iconRegistry.addSvgIconLiteral('close', this.sanitizer.bypassSecurityTrustHtml(SVG_ICON_CLOSE));
+    MESSAGE_TYPE_STYLE_VALUES.forEach((ico) => {
+      if (ico.icon) {
+        iconRegistry.addSvgIconLiteral(ico.icon.name, this.sanitizer.bypassSecurityTrustHtml(ico.icon.icon));
+      }
+    });
 
     // mises en place du taleau des éléments de formulaire
     this.dataFormElems = new Map(getObjectEntries(this.data?.formElems));
@@ -375,27 +552,27 @@ export class NgxMgwDialogMatDialogComponent<
   }
 
   private convertDialogContentRubriqueToTexteHtml<K extends KFE>(dialogContent: DialogContent<K>, index: number): DialogContentTexteHtml<K> {
-    // mise en place style rubrique si couleur ou alignement défini
-    const rubriqueStyle: DialogContentTexteHtmlRubriqueStyle | undefined =
-      typeof dialogContent.rubrique === 'string' ? undefined : { color: dialogContent.rubrique?.labelColor, 'text-align': dialogContent.rubrique?.textAlign };
     const dialogContentFormElem: K | K[] = dialogContent.formElem ?? [];
     const formElemsConfig: Array<RubriqueFormElemConfig<K>> = Array.isArray(dialogContentFormElem)
       ? dialogContentFormElem.map<RubriqueFormElemConfig<K>>((fe) => this.getRubriqueFormElemConfig(fe, index))
       : [this.getRubriqueFormElemConfig(dialogContentFormElem, index)];
     const resuTexteHtml: DialogContentTexteHtml<K> = {
       subtitle: dialogContent.subtitle,
-      rubriqueStyle,
       formElems: formElemsConfig.filter((fef) => this.data?.formGroup?.get(fef.formElemName))
+    };
+    const resuTexteHtmlStyleIcon: DialogContentTexteHtml<K> = typeof dialogContent.rubrique === 'string' ? resuTexteHtml : {
+      ...resuTexteHtml,
+      ...getRubriqueDialogContentTexteHtml(dialogContent.rubrique)
     };
     if (typeof dialogContent.rubrique !== 'string' && dialogContent.rubrique?.contenu && dialogContent.rubrique.isHtml) {
       const rubriqueHtml = this.sanitizer.bypassSecurityTrustHtml(dialogContent.rubrique.contenu);
       return {
-        ...resuTexteHtml,
+        ...resuTexteHtmlStyleIcon,
         rubriqueHtml
       };
     }
     return {
-      ...resuTexteHtml,
+      ...resuTexteHtmlStyleIcon,
       rubriqueTexte: typeof dialogContent.rubrique === 'string' ? dialogContent.rubrique : dialogContent.rubrique?.contenu
     };
   }
