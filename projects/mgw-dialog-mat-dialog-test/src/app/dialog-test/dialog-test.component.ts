@@ -56,10 +56,21 @@ export class DialogTestComponent {
 
     this.ngxMgwDialogMatDialogService
       .openDialogFormConfig(
-        {
-          rubrique: { contenu: 'Sans <i>subtitle</i> mais avec <u>html</u>', isHtml: true, type: { style: 'error',  noColor: true }, labelColor: '#997711' },
-          formElem: 'animal'
-        },
+        [
+          {
+            rubrique: { contenu: 'Sans <i>subtitle</i> mais avec <u>html</u>', isHtml: true, type: 'error' },
+            formElem: 'animal'
+          },
+          {
+            rubrique: { contenu: "C'est <em>un</em> <mark>avertissement</mark> !", isHtml: true, type: 'warning' }
+          },
+          {
+            rubrique: { contenu: "Ok c'est <strong>gagné</strong>", isHtml: true, type: 'success' }
+          },
+          { rubrique: { contenu: "Est-ce que tu <b>veux</b> qu'on continue ?", isHtml: true, type: 'question' } },
+          { rubrique: { contenu: "Je t'<b>informe</b>. C'est tout !", isHtml: true, type: 'info' } },
+          { rubrique: { contenu: 'Aucun type spécifique', isHtml: true, type: 'none' } }
+        ],
         {
           animal: {
             errorLabel: 'Saisie !!!!',

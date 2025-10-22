@@ -84,7 +84,7 @@ const MESSAGE_TYPE_STYLE_VALUES = [
   { style: 'success', icon: SVG_ICONS.success, color: '#1FAB4C' },
   { style: 'info', icon: SVG_ICONS.info, color: undefined },
   { style: 'question', icon: SVG_ICONS.question, color: undefined },
-  { style: 'error', icon: SVG_ICONS.error, color: '#C21C10' },
+  { style: 'error', icon: SVG_ICONS.error, color: '#EC2213' },
   { style: 'warning', icon: SVG_ICONS.warning, color: '#F0890C' }
 ] as const;
 
