@@ -18,14 +18,14 @@
     }
   </div>
 }
-@if (dataContent || dataContentTexte || dataContentHtml || dataContentTemplate) {
-  <mat-dialog-content class="dialog-content-base">
-    @if (dataContentTexte) {{{ dataContentTexte }}} @else if (dataContentHtml) {
-      <span [innerHTML]="dataContentHtml"></span>
-    } @else if (dataContentTemplate) {
-      <ng-container [ngTemplateOutlet]="dataContentTemplate" />
-    } @else if (dataContent?.length) {
-      <form class="form-content" [formGroup]="data?.formGroup ?? dataNoFormGroup">
+<form class="form-content" [formGroup]="dataFormGroup">
+  @if (dataContent || dataContentTexte || dataContentHtml || dataContentTemplate) {
+    <mat-dialog-content class="dialog-content-base">
+      @if (dataContentTexte) {{{ dataContentTexte }}} @else if (dataContentHtml) {
+        <span [innerHTML]="dataContentHtml"></span>
+      } @else if (dataContentTemplate) {
+        <ng-container [ngTemplateOutlet]="dataContentTemplate" />
+      } @else if (dataContent?.length) {
         @for (item of dataContent; track $index) {
           @if (item.subtitle) {
             <h3>{{ item.subtitle }}</h3>
@@ -106,16 +106,23 @@
             }
           }
         }
-      </form>
-    }
-  </mat-dialog-content>
-}
-@if (dataActions) {
-  <mat-dialog-actions [align]="data?.actionsAlign ?? actionAlignEnd">
-    @for (item of dataActions | keyvalue: noKeyvalueSort; track item.key) {
-      <button name="btn-{{ item.key }}" mat-button type="button" [color]="item.value.color" [tabindex]="item.value.tabindex" (click)="onActionClick(item.key)">
-        {{ item.value.libelle || item.key }}
-      </button>
-    }
-  </mat-dialog-actions>
-}
+      }
+    </mat-dialog-content>
+  }
+  @if (dataActions) {
+    <mat-dialog-actions [align]="data?.actionsAlign ?? actionAlignEnd">
+      @for (item of dataActions | keyvalue: noKeyvalueSort; track item.key) {
+        <button
+          name="btn-{{ item.key }}"
+          mat-button
+          type="button"
+          [color]="item.value.color"
+          [tabindex]="item.value.tabindex"
+          [disabled]="item.value.disabledIfFormInvalid && dataFormGroup.invalid"
+          (click)="onActionClick(item.key)">
+          {{ item.value.libelle || item.key }}
+        </button>
+      }
+    </mat-dialog-actions>
+  }
+</form>

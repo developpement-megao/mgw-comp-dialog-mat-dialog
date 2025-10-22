@@ -10,7 +10,8 @@ import { DialogActionButton, NgxMgwDialogMatDialogService, ResultDialog } from '
 const boutonBis: DialogActionButton = {
   libelle: 'non',
   color: 'warn',
-  noFocus: true
+  noFocus: true,
+  disabledIfFormInvalid: true
 }
 
 interface TestFormGroup {

@@ -276,6 +276,7 @@ export interface DialogActionButton {
   libelle: string;
   color?: 'warn' | 'primary' | 'accent';
   noFocus?: true;
+  disabledIfFormInvalid?: true;
 }
 
 /** {@link DialogActionButton} */
@@ -368,7 +369,9 @@ function getMessageTypeStyle(messageTypeStyle: MessageTypeStyle | MessageType): 
   return messageType;
 }
 
-function getRubriqueDialogContentTexteHtml<K extends string>(rubriqueMessageParam: MessageHtmlParam | undefined): Pick<DialogContentTexteHtml<K>, 'rubriqueStyle' | 'rubriqueIcone'> {
+function getRubriqueDialogContentTexteHtml<K extends string>(
+  rubriqueMessageParam: MessageHtmlParam | undefined
+): Pick<DialogContentTexteHtml<K>, 'rubriqueStyle' | 'rubriqueIcone'> {
   // si on n'a pas de couleur forcé on prend la couleur sur le type
   const messageType: MessageType | undefined = rubriqueMessageParam?.type ? getMessageTypeStyle(rubriqueMessageParam.type) : undefined;
   const messageTypeStyle = messageType ? MESSAGE_TYPE_STYLE_VALUES.find((mtsv) => mtsv.style === messageType.style) : undefined;
@@ -381,11 +384,8 @@ function getRubriqueDialogContentTexteHtml<K extends string>(rubriqueMessagePara
       color,
       'text-align': rubriqueMessageParam?.textAlign
     },
-    rubriqueIcone: messageTypeStyleIcon ? {
-      icon: messageTypeStyleIcon.name,
-      aria: messageTypeStyleIcon.aria
-    } : undefined
-  }
+    rubriqueIcone: messageTypeStyleIcon ? { icon: messageTypeStyleIcon.name, aria: messageTypeStyleIcon.aria } : undefined
+  };
 }
 
 @Component({
@@ -436,7 +436,7 @@ export class NgxMgwDialogMatDialogComponent<
 
   readonly labelPositionAfter = 'after';
 
-  readonly dataNoFormGroup: FormGroup = new FormGroup({});
+  readonly dataFormGroup: FormGroup;
 
   readonly dataTitleTexte: string | undefined;
   readonly dataTitleHtml: SafeHtml | undefined;
@@ -463,6 +463,9 @@ export class NgxMgwDialogMatDialogComponent<
 
     // mises en place du taleau des éléments de formulaire
     this.dataFormElems = new Map(getObjectEntries(this.data?.formElems));
+
+    // récupération formulaire (si pas présent on en crée un vide puisqu'on ne peut pas avoir de valeur undefined)
+    this.dataFormGroup = this.data?.formGroup ?? new FormGroup({});
 
     // mise en place du titre
     if (this.data?.title instanceof TemplateRef) {
@@ -560,10 +563,13 @@ export class NgxMgwDialogMatDialogComponent<
       subtitle: dialogContent.subtitle,
       formElems: formElemsConfig.filter((fef) => this.data?.formGroup?.get(fef.formElemName))
     };
-    const resuTexteHtmlStyleIcon: DialogContentTexteHtml<K> = typeof dialogContent.rubrique === 'string' ? resuTexteHtml : {
-      ...resuTexteHtml,
-      ...getRubriqueDialogContentTexteHtml(dialogContent.rubrique)
-    };
+    const resuTexteHtmlStyleIcon: DialogContentTexteHtml<K> =
+      typeof dialogContent.rubrique === 'string'
+        ? resuTexteHtml
+        : {
+            ...resuTexteHtml,
+            ...getRubriqueDialogContentTexteHtml(dialogContent.rubrique)
+          };
     if (typeof dialogContent.rubrique !== 'string' && dialogContent.rubrique?.contenu && dialogContent.rubrique.isHtml) {
       const rubriqueHtml = this.sanitizer.bypassSecurityTrustHtml(dialogContent.rubrique.contenu);
       return {
