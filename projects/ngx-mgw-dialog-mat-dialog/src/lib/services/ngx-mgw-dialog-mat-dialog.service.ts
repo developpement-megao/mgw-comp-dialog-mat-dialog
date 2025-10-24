@@ -38,7 +38,7 @@ export interface TitleConfig<T extends string | MessageHtml | TemplateRef<unknow
 }
 
 export interface ActionsConfig<KA extends KeyOfRecordActions = string, KAF extends KA = KA> {
-  actions: Record<KA, string | DialogActionButton>;
+  actions: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>;
   autoFocus?: (KA & KAF) | boolean;
   autoFocusTargetAction?: AutoFocusTargetAction;
   actionsAlign?: DialogActionsAlignValues;
@@ -84,7 +84,7 @@ function getAutoFocusValueButtonTarget<KA extends KeyOfRecordActions>(autoFocusV
 }
 
 function getAutoFocusTargetActionValue<KA extends KeyOfRecordActions>(
-  actions: Record<KA, string | DialogActionButton> | undefined,
+  actions: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton> | undefined,
   autoFocusTargetAction: AutoFocusTargetAction | undefined
 ): string {
   if (isAutoFocusTargetActionValue(autoFocusTargetAction)) {
@@ -172,7 +172,7 @@ export class NgxMgwDialogMatDialogService {
     title: string | TemplateRef<unknown> | TitleConfig | undefined,
     content: string | MessageHtml | TemplateRef<unknown> | Array<string | DialogContent<KF & KFE>> | undefined,
     dialogConfig: DialogConfigValue<KA> | undefined,
-    actions?: Record<KA, string | DialogActionButton>,
+    actions?: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>,
     autoFocus?: (KA & KAF) | boolean,
     actionsAlign?: DialogActionsAlignValues,
     autoFocusTargetAction?: AutoFocusTargetAction,
@@ -220,7 +220,7 @@ export class NgxMgwDialogMatDialogService {
     formElems: Record<KF, DialogFormElemConfig>,
     formGroup: FormGroup<TC>,
     dialogConfig: DialogConfigValue<KA> | undefined,
-    actions?: Record<KA, string | DialogActionButton> | undefined,
+    actions?: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton> | undefined,
     autoFocus?: (KA & KAF) | boolean,
     actionsAlign?: DialogActionsAlignValues,
     autoFocusTargetAction?: AutoFocusTargetAction
@@ -234,7 +234,7 @@ export class NgxMgwDialogMatDialogService {
     title: string | TemplateRef<unknown> | TitleConfig | undefined,
     content: string | MessageHtml | TemplateRef<unknown> | Array<string | DialogContent<string & never>> | undefined,
     dialogConfig: DialogConfigValue<KA> | undefined,
-    actions: Record<KA, string | DialogActionButton> | undefined,
+    actions: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton> | undefined,
     autoFocusOrDialogConfig: (KA & KAF) | boolean | DialogConfigValue<KA> | undefined,
     actionsAlign: DialogActionsAlignValues | undefined
   ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA, TR>> {
@@ -273,7 +273,7 @@ export class NgxMgwDialogMatDialogService {
   openDialog<KA extends KeyOfRecordActions, KAF extends KA = KA>(
     title: string | TemplateRef<unknown> | TitleConfig,
     content?: string | MessageHtml | TemplateRef<unknown> | Array<string | DialogContent<string & never>>,
-    actions?: Record<KA, string | DialogActionButton>,
+    actions?: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>,
     autoFocus?: (KA & KAF) | boolean,
     actionsAlign?: DialogActionsAlignValues,
     dialogConfig?: Omit<MatDialogConfig<NgxMgwDialogMatDialogData<KA>>, 'data' | 'autoFocus'>
@@ -282,7 +282,7 @@ export class NgxMgwDialogMatDialogService {
   openDialog<KA extends KeyOfRecordActions>(
     title: string | TemplateRef<unknown> | TitleConfig,
     content: string | MessageHtml | TemplateRef<unknown> | Array<string | DialogContent<string & never>>,
-    actions: Record<KA, string | DialogActionButton>,
+    actions: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>,
     dialogConfig: Omit<MatDialogConfig<NgxMgwDialogMatDialogData<KA>>, 'data' | 'autoFocus'>
   ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA>>;
 
@@ -299,7 +299,7 @@ export class NgxMgwDialogMatDialogService {
   openDialog<KA extends KeyOfRecordActions, KAF extends KA = KA>(
     title: string | TemplateRef<unknown> | TitleConfig,
     content?: string | MessageHtml | TemplateRef<unknown> | Array<string | DialogContent<string & never>>,
-    actions?: Record<KA, string | DialogActionButton>,
+    actions?: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>,
     autoFocusOrDialogConfig?: (KA & KAF) | boolean | DialogConfigValue<KA>,
     actionsAlign?: DialogActionsAlignValues,
     dialogConfig?: DialogConfigValue<KA>
@@ -312,7 +312,7 @@ export class NgxMgwDialogMatDialogService {
   openDialogHtml<KA extends KeyOfRecordActions, KAF extends KA = KA>(
     title: string | TitleConfig<string>,
     content?: string | Array<string | DialogContent<string & never>>,
-    actions?: Record<KA, string | DialogActionButton>,
+    actions?: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>,
     autoFocus?: (KA & KAF) | boolean,
     actionsAlign?: DialogActionsAlignValues,
     dialogConfig?: Omit<MatDialogConfig<NgxMgwDialogMatDialogData<KA>>, 'data' | 'autoFocus'>
@@ -321,14 +321,14 @@ export class NgxMgwDialogMatDialogService {
   openDialogHtml<KA extends KeyOfRecordActions>(
     title: string | TitleConfig<string>,
     content: string | Array<string | DialogContent<string & never>>,
-    actions: Record<KA, string | DialogActionButton>,
+    actions: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>,
     dialogConfig: Omit<MatDialogConfig<NgxMgwDialogMatDialogData<KA>>, 'data' | 'autoFocus'>
   ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA>>;
 
   openDialogHtml<KA extends KeyOfRecordActions, KAF extends KA = KA>(
     title: string | TitleConfig<string>,
     content?: string | Array<string | DialogContent<string & never>>,
-    actions?: Record<KA, string | DialogActionButton>,
+    actions?: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>,
     autoFocusOrDialogConfig?: (KA & KAF) | boolean | DialogConfigValue<KA>,
     actionsAlign?: DialogActionsAlignValues,
     dialogConfig?: DialogConfigValue<KA>
@@ -340,7 +340,7 @@ export class NgxMgwDialogMatDialogService {
   openDialogNoCloseButton<KA extends KeyOfRecordActions, KAF extends KA = KA>(
     title: string | MessageHtml | TemplateRef<unknown>,
     content?: string | MessageHtml | TemplateRef<unknown> | Array<string | DialogContent<string & never>>,
-    actions?: Record<KA, string | DialogActionButton>,
+    actions?: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>,
     autoFocus?: (KA & KAF) | boolean,
     actionsAlign?: DialogActionsAlignValues,
     dialogConfig?: DialogConfigValue<KA>
@@ -349,14 +349,14 @@ export class NgxMgwDialogMatDialogService {
   openDialogNoCloseButton<KA extends KeyOfRecordActions>(
     title: string | MessageHtml | TemplateRef<unknown>,
     content: string | MessageHtml | TemplateRef<unknown> | Array<string | DialogContent<string & never>>,
-    actions: Record<KA, string | DialogActionButton>,
+    actions: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>,
     dialogConfig: DialogConfigValue<KA>
   ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA, never>>;
 
   openDialogNoCloseButton<KA extends KeyOfRecordActions, KAF extends KA = KA>(
     title: string | MessageHtml | TemplateRef<unknown>,
     content?: string | MessageHtml | TemplateRef<unknown> | Array<string | DialogContent<string & never>>,
-    actions?: Record<KA, string | DialogActionButton>,
+    actions?: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>,
     autoFocusOrDialogConfig?: (KA & KAF) | boolean | DialogConfigValue<KA>,
     actionsAlign?: DialogActionsAlignValues,
     dialogConfig?: DialogConfigValue<KA>
@@ -392,7 +392,7 @@ export class NgxMgwDialogMatDialogService {
     formElems: Record<KF, DialogFormElemConfig>,
     formGroup: FormGroup<TC>,
     title?: string | TemplateRef<unknown> | TitleConfig,
-    actions?: Record<KA, string | DialogActionButton>,
+    actions?: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>,
     autoFocus?: (KA & KAF) | boolean,
     actionsAlign?: DialogActionsAlignValues,
     dialogConfig?: DialogConfigValue<KA>
@@ -409,7 +409,7 @@ export class NgxMgwDialogMatDialogService {
     formElems: Record<KF, DialogFormElemConfig>,
     formGroup: FormGroup<TC>,
     title: string | TemplateRef<unknown> | TitleConfig,
-    actions: Record<KA, string | DialogActionButton>,
+    actions: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>,
     dialogConfig: DialogConfigValue<KA>
   ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA>>;
 
@@ -425,7 +425,7 @@ export class NgxMgwDialogMatDialogService {
     formElems: Record<KF, DialogFormElemConfig>,
     formGroup: FormGroup<TC>,
     title?: string | TemplateRef<unknown> | TitleConfig,
-    actions?: Record<KA, string | DialogActionButton>,
+    actions?: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>,
     autoFocusOrDialogConfig?: (KA & KAF) | boolean | DialogConfigValue<KA>,
     actionsAlign?: DialogActionsAlignValues,
     dialogConfig?: DialogConfigValue<KA>

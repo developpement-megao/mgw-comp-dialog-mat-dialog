@@ -102,7 +102,7 @@ const INPUT_TYPE_CHECKBOX = 'checkbox';
 
 type KeyOfRecord = string | number | symbol;
 
-export type KeyOfRecordActions = Exclude<KeyOfRecord, symbol>;
+export type KeyOfRecordActions = Exclude<KeyOfRecord, symbol> & string;
 
 /**
  * Types prédéfinis pour le style du message.
@@ -299,7 +299,7 @@ export interface NgxMgwDialogMatDialogData<
 > {
   title?: string | MessageHtml | TemplateRef<unknown>;
   content?: string | MessageHtml | TemplateRef<unknown> | Array<string | DialogContent<KFormElem>>;
-  actions?: Record<KAction, string | DialogActionButton>;
+  actions?: Record<KAction, string | DialogActionButton> | Map<KAction, string | DialogActionButton>;
   actionsAlign?: DialogActionsAlignValues;
   noCloseButton?: true;
   formElems?: Record<KForm, DialogFormElemConfig>;

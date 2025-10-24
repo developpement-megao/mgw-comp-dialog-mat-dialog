@@ -53,7 +53,8 @@ export class DialogTestComponent {
         rr: 'rr'
       },
       b: boutonBis,
-      c: 'Codscds'
+      c: 'Codscds',
+      1: 'pas bon !!!'
     };
 
     this.ngxMgwDialogMatDialogService
