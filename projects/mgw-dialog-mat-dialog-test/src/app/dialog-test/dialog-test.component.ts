@@ -1,4 +1,5 @@
-import { Component, inject, TemplateRef, ViewChild } from '@angular/core';
+/* eslint-disable no-console */
+import { ChangeDetectionStrategy, Component, inject, TemplateRef, ViewChild } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, FormsModule, Validators } from '@angular/forms';
 
 import { MatButtonModule } from '@angular/material/button';
@@ -12,22 +13,23 @@ const boutonBis: DialogActionButton = {
   color: 'warn',
   noFocus: true,
   disabledIfFormInvalid: true
-}
+};
 
 interface TestFormGroup {
   animal: FormControl<string>;
   autre: FormControl<string>;
-  1: FormControl<number>;
 }
 
 @Component({
   selector: 'app-dialog-test',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [MatFormFieldModule, MatInputModule, FormsModule, MatButtonModule],
   templateUrl: './dialog-test.component.html',
   styleUrl: './dialog-test.component.scss'
 })
 export class DialogTestComponent {
+  // eslint-disable-next-line @angular-eslint/prefer-signals
   @ViewChild('customTitle') customTitle: TemplateRef<unknown> | undefined;
 
   private readonly ngxMgwDialogMatDialogService = inject(NgxMgwDialogMatDialogService);
@@ -40,8 +42,7 @@ export class DialogTestComponent {
     const fb = new FormBuilder();
     this.testFormGroup = fb.nonNullable.group<TestFormGroup>({
       animal: fb.nonNullable.control<string>({ value: '', disabled: false }, Validators.pattern(/[A-Z]/)),
-      autre: fb.nonNullable.control<string>(''),
-      1: fb.nonNullable.control<number>(0),
+      autre: fb.nonNullable.control<string>('')
     });
   }
 
@@ -80,7 +81,10 @@ export class DialogTestComponent {
             maxWidth: '500px',
             labelPosition: 'before',
             isSelect: true,
-            values: [{ value: 1, texte: 'Coucou' }, { value: 2, texte: 'Coucccou' }],
+            values: [
+              { value: 1, texte: 'Coucou' },
+              { value: 2, texte: 'Coucccou' }
+            ],
             selectResetText: ' * Aucun'
           }
         },
@@ -88,20 +92,25 @@ export class DialogTestComponent {
         {
           actionsConfig: {
             actions,
-            actionsAlign: 'center',
             autoFocus: 'b'
           },
           dialogConfig: {
             width: '450px'
+          },
+          title: {
+            title: {
+              contenu: 'Mon <i>appli</i> <strong>super</strong> !',
+              isHtml: true
+            }
           }
         }
       )
       .afterClosed()
-      .subscribe(result => {
-        if (result?.result === ResultDialog.Close) {
-          console.log('The dialog was closed by close button', result, this.testFormGroup.value);
-        } else if (result?.action) {
-          console.log('The dialog was closed by button :', result?.action, this.testFormGroup.value);
+      .subscribe((result) => {
+        if (result === ResultDialog.Close) {
+          console.log('The dialog was closed by close button', result, typeof result, this.testFormGroup.value);
+        } else if (result) {
+          console.log('The dialog was closed by button :', result, typeof result, this.testFormGroup.value);
         } else {
           console.log('The dialog was closed', this.testFormGroup.value);
         }

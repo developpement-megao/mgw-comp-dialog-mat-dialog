@@ -1,3 +1,4 @@
+/* eslint-disable capitalized-comments */
 import { inject, Injectable, TemplateRef } from '@angular/core';
 
 import { AutoFocusTarget, MatDialog, MatDialogConfig, MatDialogRef } from '@angular/material/dialog';
@@ -11,7 +12,8 @@ import {
   MessageHtml,
   NgxMgwDialogMatDialogComponent,
   NgxMgwDialogMatDialogData,
-  NgxMgwDialogMatDialogResult
+  NgxMgwDialogMatDialogResult,
+  ResultDialog
 } from '../ngx-mgw-dialog-mat-dialog/ngx-mgw-dialog-mat-dialog.component';
 import { AbstractControl, FormGroup } from '@angular/forms';
 
@@ -21,6 +23,7 @@ const AUTO_FOCUS_TARGET_FIRST_TABBABLE = 'first-tabbable';
 const AUTO_FOCUS_TARGET_FIRST_ACTION = 'first-action';
 const AUTO_FOCUS_TARGET_LAST_ACTION = 'last-action';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const AUTO_FOCUS_TARGET_ACTION = [AUTO_FOCUS_TARGET_FIRST_ACTION, AUTO_FOCUS_TARGET_LAST_ACTION] as const;
 
 type AutoFocusTargetFirstLastAction = (typeof AUTO_FOCUS_TARGET_ACTION)[number];
@@ -58,8 +61,8 @@ export interface NgxMgwDialogMatDialogConfig<
   dialogConfig?: DialogConfigValue<KAction>;
 }
 
-function isSimpleTypeValue(value: unknown): value is string | number | boolean | undefined {
-  if (value === undefined || typeof value === 'boolean' || typeof value === 'string' || typeof value === 'number') {
+function isSimpleTypeValue(value: unknown): value is string | number | boolean | symbol | undefined {
+  if (value === undefined || typeof value === 'boolean' || typeof value === 'string' || typeof value === 'number' || typeof value === 'symbol') {
     return true;
   }
   return false;
@@ -160,6 +163,7 @@ export class NgxMgwDialogMatDialogService {
   private dialogOpen<
     KA extends KeyOfRecordActions,
     KAF extends KA = KA,
+    TR extends ResultDialog.Close = ResultDialog.Close,
     T = unknown,
     TC extends { [K in keyof TC]: AbstractControl<T> } = never,
     KF extends keyof TC & string = never,
@@ -174,7 +178,7 @@ export class NgxMgwDialogMatDialogService {
     autoFocusTargetAction?: AutoFocusTargetAction,
     formElems?: Record<KF, DialogFormElemConfig>,
     formGroup?: FormGroup<TC>
-  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA>> {
+  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA, TR>> {
     // récupération titre config (si title simple alors pas de noCloseButton)
     const titleConfig: TitleConfig | undefined =
       typeof title === 'string' || title instanceof TemplateRef ? ({ title } satisfies TitleConfig<string | TemplateRef<unknown>>) : title;
@@ -193,7 +197,7 @@ export class NgxMgwDialogMatDialogService {
     // la valeur undefined doit devenir true (comportement par défaut si autoFocus non précisé on focus sur le premier bouton)
     const autoFocusValue = autoFocus === true || autoFocus === undefined ? getAutoFocusTargetActionValue(actions, autoFocusTargetAction) : getAutoFocusValue(autoFocus);
 
-    return this.matDialog.open<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogData<KA, T, TC, KF, KFE>, NgxMgwDialogMatDialogResult<KA>>(
+    return this.matDialog.open<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogData<KA, T, TC, KF, KFE>, NgxMgwDialogMatDialogResult<KA, TR>>(
       NgxMgwDialogMatDialogComponent<KA>,
       {
         ...dialogConfig,
@@ -226,22 +230,22 @@ export class NgxMgwDialogMatDialogService {
     return this.dialogOpen(title, contentList, dialogConfig, actions, autoFocus, actionsAlign, autoFocusTargetAction, formElems, formGroup);
   }
 
-  private dialogOpenActions<KA extends KeyOfRecordActions, KAF extends KA = KA>(
+  private dialogOpenActions<KA extends KeyOfRecordActions, KAF extends KA = KA, TR extends ResultDialog.Close = ResultDialog.Close>(
     title: string | TemplateRef<unknown> | TitleConfig | undefined,
     content: string | MessageHtml | TemplateRef<unknown> | Array<string | DialogContent<string & never>> | undefined,
     dialogConfig: DialogConfigValue<KA> | undefined,
     actions: Record<KA, string | DialogActionButton> | undefined,
     autoFocusOrDialogConfig: (KA & KAF) | boolean | DialogConfigValue<KA> | undefined,
     actionsAlign: DialogActionsAlignValues | undefined
-  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA>> {
+  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA, TR>> {
     // récupération bonne valeur de dialogConfig et autoFocus
     // on teste si on a une valeur autoFocus dans le paramètre autoFocusOrDialogConfig
     if (isSimpleTypeValue(autoFocusOrDialogConfig)) {
       // autoFocusOrDialogConfig est l'autoFocus et dalogConfig est dans dalogConfig
-      return this.dialogOpen(title, content, dialogConfig, actions, autoFocusOrDialogConfig, actionsAlign);
+      return this.dialogOpen<KA, KAF, TR, never, never, never, never>(title, content, dialogConfig, actions, autoFocusOrDialogConfig, actionsAlign);
     }
     // autoFocusOrDialogConfig est le dialogConfig et on n'a pas d'autoFocus (et pas non plus d'autres paramètres pour les actions)
-    return this.dialogOpen(title, content, autoFocusOrDialogConfig, actions);
+    return this.dialogOpen<KA, KAF, TR, never, never, never, never>(title, content, autoFocusOrDialogConfig, actions);
   }
 
   private dialogOpenActionsConfig<KA extends KeyOfRecordActions, KAF extends KA = KA>(
@@ -340,14 +344,14 @@ export class NgxMgwDialogMatDialogService {
     autoFocus?: (KA & KAF) | boolean,
     actionsAlign?: DialogActionsAlignValues,
     dialogConfig?: DialogConfigValue<KA>
-  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA>>;
+  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA, never>>;
 
   openDialogNoCloseButton<KA extends KeyOfRecordActions>(
     title: string | MessageHtml | TemplateRef<unknown>,
     content: string | MessageHtml | TemplateRef<unknown> | Array<string | DialogContent<string & never>>,
     actions: Record<KA, string | DialogActionButton>,
     dialogConfig: DialogConfigValue<KA>
-  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA>>;
+  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA, never>>;
 
   openDialogNoCloseButton<KA extends KeyOfRecordActions, KAF extends KA = KA>(
     title: string | MessageHtml | TemplateRef<unknown>,
@@ -356,10 +360,10 @@ export class NgxMgwDialogMatDialogService {
     autoFocusOrDialogConfig?: (KA & KAF) | boolean | DialogConfigValue<KA>,
     actionsAlign?: DialogActionsAlignValues,
     dialogConfig?: DialogConfigValue<KA>
-  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA>> {
+  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA, never>> {
     // ajout du paramètre noCloseButton
     // on va appeler dialogOpen en passant le titre (en le convertissant en TitleConfig avec noCloseButton), le content sera appelé directement
-    return this.dialogOpenActions({ title, noCloseButton: true }, content, dialogConfig, actions, autoFocusOrDialogConfig, actionsAlign);
+    return this.dialogOpenActions<KA, KAF, never>({ title, noCloseButton: true }, content, dialogConfig, actions, autoFocusOrDialogConfig, actionsAlign);
   }
 
   openDialogConfig<KA extends KeyOfRecordActions, KAF extends KA = KA>(

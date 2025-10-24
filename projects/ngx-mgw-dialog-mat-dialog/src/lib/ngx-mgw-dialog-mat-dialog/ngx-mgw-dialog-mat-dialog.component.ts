@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/naming-convention */
+/* eslint-disable mgw-eslint-rules/avoid-backtick-without-interpolation */
+/* eslint-disable capitalized-comments */
 import { KeyValuePipe, NgStyle, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, TemplateRef } from '@angular/core';
 import { AbstractControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -90,6 +93,7 @@ const MESSAGE_TYPE_STYLE_VALUES = [
 
 const ACTION_ALIGN_END = 'end';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const ACTIONS_ALIGN_VAL = ['center', 'start', ACTION_ALIGN_END] as const;
 
 const INPUT_TYPE_TEXT = 'text';
@@ -317,10 +321,7 @@ export const enum ResultDialog {
   Close
 }
 
-export interface NgxMgwDialogMatDialogResult<KAction extends KeyOfRecordActions = string> {
-  action?: KAction;
-  result: ResultDialog;
-}
+export type NgxMgwDialogMatDialogResult<KAction extends KeyOfRecordActions = string, TResult extends ResultDialog.Close = ResultDialog.Close> = KAction | TResult;
 
 export function isMessageHtml(value: unknown): value is MessageHtml {
   if (typeof value === 'object' && value !== null && 'contenu' in value && typeof value.contenu === 'string' && 'isHtml' in value && typeof value.isHtml === 'boolean') {
@@ -588,15 +589,10 @@ export class NgxMgwDialogMatDialogComponent<
   }
 
   onActionClick(key: KA): void {
-    this.dialogRef.close({
-      action: key,
-      result: ResultDialog.None
-    });
+    this.dialogRef.close(key);
   }
 
   onCloseClick(): void {
-    this.dialogRef.close({
-      result: ResultDialog.Close
-    });
+    this.dialogRef.close(ResultDialog.Close);
   }
 }
