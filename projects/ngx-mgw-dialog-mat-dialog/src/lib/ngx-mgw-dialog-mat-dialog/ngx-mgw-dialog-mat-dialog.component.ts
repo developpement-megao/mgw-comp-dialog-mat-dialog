@@ -100,9 +100,9 @@ const INPUT_TYPE_TEXT = 'text';
 const INPUT_TYPE_TEXTAREA = 'textarea';
 const INPUT_TYPE_CHECKBOX = 'checkbox';
 
-type KeyOfRecord = string | number | symbol;
+export type OnlyNonNumericStringKeys<K extends PropertyKey> = K extends string ? (K extends `${number}` ? never : K) : never;
 
-export type KeyOfRecordActions = Exclude<KeyOfRecord, symbol> & string;
+export type OnlyNonNumericStringKeysFromRecord<T extends Record<PropertyKey, unknown>> = OnlyNonNumericStringKeys<keyof T>;
 
 /**
  * Types prédéfinis pour le style du message.
@@ -202,7 +202,7 @@ export interface MessageHtmlParam extends MessageHtml {
   textAlign?: 'start' | 'end' | 'center' | 'justify';
 }
 
-export interface DialogContent<K extends string = string> {
+export interface DialogContent<K extends string = never> {
   subtitle?: string;
   rubrique?: string | MessageHtmlParam;
   formElem?: K | K[];
@@ -291,15 +291,14 @@ interface DialogActionButtonData extends Omit<DialogActionButton, 'noFocus'> {
 export type DialogActionsAlignValues = (typeof ACTIONS_ALIGN_VAL)[number];
 
 export interface NgxMgwDialogMatDialogData<
-  KAction extends KeyOfRecordActions = string,
-  TValue = unknown,
-  TControl extends { [K in keyof TControl]: AbstractControl<TValue> } = never,
+  KAction extends PropertyKey = string,
+  TControl extends { [K in keyof TControl]: AbstractControl<unknown> } = never,
   KForm extends keyof TControl & string = never,
   KFormElem extends KForm = KForm
 > {
   title?: string | MessageHtml | TemplateRef<unknown>;
-  content?: string | MessageHtml | TemplateRef<unknown> | Array<string | DialogContent<KFormElem>>;
-  actions?: Record<KAction, string | DialogActionButton> | Map<KAction, string | DialogActionButton>;
+  content?: string | MessageHtml | TemplateRef<unknown> | Array<string | DialogContent<KForm & KFormElem>>;
+  actions?: Record<KAction, string | DialogActionButton>;
   actionsAlign?: DialogActionsAlignValues;
   noCloseButton?: true;
   formElems?: Record<KForm, DialogFormElemConfig>;
@@ -321,7 +320,9 @@ export const enum ResultDialog {
   Close
 }
 
-export type NgxMgwDialogMatDialogResult<KAction extends KeyOfRecordActions = string, TResult extends ResultDialog.Close = ResultDialog.Close> = KAction | TResult;
+export type NgxMgwDialogMatDialogResult<TResult extends ResultDialog.Close = ResultDialog.Close, KActionResult extends PropertyKey = string> =
+  | TResult
+  | OnlyNonNumericStringKeys<KActionResult>;
 
 export function isMessageHtml(value: unknown): value is MessageHtml {
   if (typeof value === 'object' && value !== null && 'contenu' in value && typeof value.contenu === 'string' && 'isHtml' in value && typeof value.isHtml === 'boolean') {
@@ -331,22 +332,26 @@ export function isMessageHtml(value: unknown): value is MessageHtml {
 }
 
 /**
- * Récupère un tableau de tubles [clé, valeur] (`[K, V]`) à partir d'un `Record` ou d'un objet `Map`
- * @param {Record<K, V> | Map<K, V> | undefined} recOrMap `Record` ou objet `Map` (`K` est d'un type qui étend `string`, `number` ou `symbol`)
- * @returns {Array<[K, V]> | undefined} Tableau de pair clé valeur ou `undefined` (si param {@link recOrMap} est `undefined`)
+ * Récupère un tableau de tubles [clé, valeur] (`[K, V]`) à partir d'un `Record`
+ * @param {Record<K, V>} record `Record` (`K` est d'un type qui étend `string`)
+ * @returns {Array<[K, V]>} Tableau de pair clé valeur avec clé de type string
  */
-function getObjectEntries<K extends KeyOfRecord, V>(recOrMap: Record<K, V> | Map<K, V> | undefined): Array<[K, V]> | undefined {
-  if (recOrMap === undefined) {
-    // undefined
-    return undefined;
-  }
-  if (recOrMap instanceof Map) {
-    // objet Map on crée le tableau avec le constructeur de tableau
-    return Array.from(recOrMap);
-  }
-  // pas objet Map donc Record on va créer le tableau à l'aide d'Object
+function convertRecordToArray<K extends string, V>(record: Record<K, V>): Array<[K, V]> {
+  // on va créer le tableau à l'aide d'Object
   // Object.entries renvoie un tableau de tuples [clé, valeur]
-  return Object.entries(recOrMap) as Array<[K, V]>;
+  return Object.entries(record) as Array<[K, V]>;
+}
+
+function getRecordNonNumericStringEntries<K extends PropertyKey, V>(record: Record<K, V>): Array<[OnlyNonNumericStringKeys<K> & K, V]> {
+  return Object.entries(record).filter((value) => {
+    const [key] = value;
+    if (typeof key === 'string' && isNaN(Number(key))) {
+      return true;
+    }
+    // key est de type numeric on affiche un message d'avertissement et on ne renvoit pas l'entrée
+    console.warn(`L'action avec la clé \`${key}\` ne sera pas prise en compte puisque la clé est de type numérique.`);
+    return false;
+  }) as Array<[OnlyNonNumericStringKeys<K> & K, V]>;
 }
 
 function isStringNotEmpty(value: string | undefined): boolean {
@@ -412,22 +417,19 @@ function getRubriqueDialogContentTexteHtml<K extends string>(
   styleUrl: './ngx-mgw-dialog-mat-dialog.component.scss'
 })
 export class NgxMgwDialogMatDialogComponent<
-  KA extends KeyOfRecordActions = string,
-  T = unknown,
-  TC extends { [K in keyof TC]: AbstractControl<T> } = never,
+  KA extends PropertyKey = string,
+  TC extends { [K in keyof TC]: AbstractControl<unknown> } = never,
   KF extends keyof TC & string = never,
   KFE extends KF = KF
 > {
-  readonly dialogRef: MatDialogRef<NgxMgwDialogMatDialogComponent<KA, T, TC, KF, KFE>, NgxMgwDialogMatDialogResult<KA>> = inject(
-    MatDialogRef<NgxMgwDialogMatDialogComponent<KA, T, TC, KF, KFE>, NgxMgwDialogMatDialogResult<KA>>
+  readonly dialogRef: MatDialogRef<NgxMgwDialogMatDialogComponent<KA, TC, KF, KFE>, OnlyNonNumericStringKeys<KA> | ResultDialog.Close> = inject(
+    MatDialogRef<NgxMgwDialogMatDialogComponent<KA, TC, KF, KFE>, OnlyNonNumericStringKeys<KA> | ResultDialog.Close>
   );
-  readonly data: NgxMgwDialogMatDialogData<KA, T, TC, KF, KFE> | null | undefined = inject<NgxMgwDialogMatDialogData<KA, T, TC, KF, KFE> | null | undefined>(
-    MAT_DIALOG_DATA
-  );
+  readonly data: NgxMgwDialogMatDialogData<KA, TC, KF, KFE> | null | undefined = inject<NgxMgwDialogMatDialogData<KA, TC, KF, KFE> | null | undefined>(MAT_DIALOG_DATA);
 
   private readonly sanitizer = inject(DomSanitizer);
 
-  private readonly dataFormElems: ReadonlyMap<KF, DialogFormElemConfig>;
+  private readonly dataFormElems: ReadonlyMap<KF, DialogFormElemConfig> | undefined;
 
   readonly actionAlignEnd = ACTION_ALIGN_END;
 
@@ -446,9 +448,9 @@ export class NgxMgwDialogMatDialogComponent<
   readonly dataContentTexte: string | undefined;
   readonly dataContentHtml: SafeHtml | undefined;
   readonly dataContentTemplate: TemplateRef<unknown> | undefined;
-  readonly dataContent: ReadonlyArray<DialogContentTexteHtml<KFE>> | undefined;
+  readonly dataContent: ReadonlyArray<DialogContentTexteHtml<KF & KFE>> | undefined;
 
-  readonly dataActions: ReadonlyMap<KA, DialogActionButtonData> | undefined;
+  readonly dataActions: ReadonlyMap<OnlyNonNumericStringKeys<KA>, DialogActionButtonData> | undefined;
 
   hasContent: boolean = false;
 
@@ -463,7 +465,7 @@ export class NgxMgwDialogMatDialogComponent<
     });
 
     // mises en place du taleau des éléments de formulaire
-    this.dataFormElems = new Map(getObjectEntries(this.data?.formElems));
+    this.dataFormElems = this.data?.formElems ? new Map(convertRecordToArray(this.data.formElems)) : undefined;
 
     // récupération formulaire (si pas présent on en crée un vide puisqu'on ne peut pas avoir de valeur undefined)
     this.dataFormGroup = this.data?.formGroup ?? new FormGroup({});
@@ -506,8 +508,8 @@ export class NgxMgwDialogMatDialogComponent<
     } else {
       // c'est un tableau contenant des DialogContent ou des string (si celui-ci est vide on ne doit pas remplir la variable)
       // on va le convertir en tableau de DialogContentTexteHtml (si celui-ci est vide on ne doit pas remplir la variable)
-      const dataContents: ReadonlyArray<DialogContentTexteHtml<KFE>> = this.data.content.map<DialogContentTexteHtml<KFE>>((val, i) => {
-        const valContent: DialogContent<KFE> = typeof val === 'string' ? { rubrique: val } : val;
+      const dataContents: ReadonlyArray<DialogContentTexteHtml<KF & KFE>> = this.data.content.map<DialogContentTexteHtml<KF & KFE>>((val, i) => {
+        const valContent: DialogContent<KF & KFE> = typeof val === 'string' ? { rubrique: val } : val;
         return this.convertDialogContentRubriqueToTexteHtml(valContent, i);
       });
       if (dataContents.some((v) => isStringNotEmpty(v.subtitle) || isStringNotEmpty(v.rubriqueTexte) || v.rubriqueHtml !== undefined)) {
@@ -522,16 +524,16 @@ export class NgxMgwDialogMatDialogComponent<
     }
 
     // mises en place du taleau des boutons d'actions
-    const actionsEntries = getObjectEntries(this.data?.actions);
+    const actionsEntries = this.data?.actions ? getRecordNonNumericStringEntries(this.data.actions) : undefined;
     if (actionsEntries?.length) {
       this.hasContent = true;
       this.dataActions = new Map(
         actionsEntries
-          .map<[KA, DialogActionButton]>((pair) => {
+          .map<[OnlyNonNumericStringKeys<KA>, DialogActionButton]>((pair) => {
             const actionEntryData: string | DialogActionButton = pair[1];
             return [pair[0], typeof actionEntryData === 'string' ? { libelle: actionEntryData } : actionEntryData];
           })
-          .map<[KA, DialogActionButtonData]>((pairObj) => {
+          .map<[OnlyNonNumericStringKeys<KA>, DialogActionButtonData]>((pairObj) => {
             const actionButton: DialogActionButton = pairObj[1];
             return [pairObj[0], { ...actionButton, tabindex: actionButton.noFocus === true ? -1 : 0 }];
           })
@@ -539,12 +541,12 @@ export class NgxMgwDialogMatDialogComponent<
     }
   }
 
-  private getRubriqueFormElemConfig<K extends KFE>(formElem: K, index: number): RubriqueFormElemConfig<K> {
+  private getRubriqueFormElemConfig<K extends KF & KFE>(formElem: K, index: number): RubriqueFormElemConfig<K> {
     const retRubriqueFormElemConfig: RubriqueFormElemConfig<K> = {
       formElemName: formElem,
       contentIndex: index
     };
-    const dialogFormElemConfig: DialogFormElemConfig | undefined = this.dataFormElems.get(formElem);
+    const dialogFormElemConfig: DialogFormElemConfig | undefined = this.dataFormElems?.get(formElem);
     if (dialogFormElemConfig) {
       return {
         ...retRubriqueFormElemConfig,
@@ -555,7 +557,7 @@ export class NgxMgwDialogMatDialogComponent<
     return retRubriqueFormElemConfig;
   }
 
-  private convertDialogContentRubriqueToTexteHtml<K extends KFE>(dialogContent: DialogContent<K>, index: number): DialogContentTexteHtml<K> {
+  private convertDialogContentRubriqueToTexteHtml<K extends KF & KFE>(dialogContent: DialogContent<K>, index: number): DialogContentTexteHtml<K> {
     const dialogContentFormElem: K | K[] = dialogContent.formElem ?? [];
     const formElemsConfig: Array<RubriqueFormElemConfig<K>> = Array.isArray(dialogContentFormElem)
       ? dialogContentFormElem.map<RubriqueFormElemConfig<K>>((fe) => this.getRubriqueFormElemConfig(fe, index))
@@ -588,7 +590,7 @@ export class NgxMgwDialogMatDialogComponent<
     return 0;
   }
 
-  onActionClick(key: KA): void {
+  onActionClick(key: OnlyNonNumericStringKeys<KA>): void {
     this.dialogRef.close(key);
   }
 

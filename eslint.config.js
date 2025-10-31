@@ -418,7 +418,7 @@ module.exports = tseslint.config(
       "complexity": [
         "warn",
         {
-          max: 40
+          max: 42
         }
       ],
       "curly": ["error"],

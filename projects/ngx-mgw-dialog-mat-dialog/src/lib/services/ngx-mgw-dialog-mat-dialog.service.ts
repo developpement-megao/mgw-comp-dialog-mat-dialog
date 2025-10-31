@@ -1,6 +1,8 @@
 /* eslint-disable capitalized-comments */
 import { inject, Injectable, TemplateRef } from '@angular/core';
 
+import { AbstractControl, FormGroup } from '@angular/forms';
+
 import { AutoFocusTarget, MatDialog, MatDialogConfig, MatDialogRef } from '@angular/material/dialog';
 
 import {
@@ -8,14 +10,13 @@ import {
   DialogActionsAlignValues,
   DialogContent,
   DialogFormElemConfig,
-  KeyOfRecordActions,
   MessageHtml,
   NgxMgwDialogMatDialogComponent,
   NgxMgwDialogMatDialogData,
   NgxMgwDialogMatDialogResult,
+  OnlyNonNumericStringKeys,
   ResultDialog
 } from '../ngx-mgw-dialog-mat-dialog/ngx-mgw-dialog-mat-dialog.component';
-import { AbstractControl, FormGroup } from '@angular/forms';
 
 // first-tabbable :	Focus the first tabbable element. This is the default setting.
 const AUTO_FOCUS_TARGET_FIRST_TABBABLE = 'first-tabbable';
@@ -28,7 +29,7 @@ const AUTO_FOCUS_TARGET_ACTION = [AUTO_FOCUS_TARGET_FIRST_ACTION, AUTO_FOCUS_TAR
 
 type AutoFocusTargetFirstLastAction = (typeof AUTO_FOCUS_TARGET_ACTION)[number];
 
-type DialogConfigValue<KA extends KeyOfRecordActions> = Omit<MatDialogConfig<NgxMgwDialogMatDialogData<KA>>, 'data' | 'autoFocus'>;
+type DialogConfigValue = Omit<MatDialogConfig<never>, 'data' | 'autoFocus'>;
 
 export type AutoFocusTargetAction = AutoFocusTarget | AutoFocusTargetFirstLastAction;
 
@@ -37,16 +38,13 @@ export interface TitleConfig<T extends string | MessageHtml | TemplateRef<unknow
   noCloseButton?: true;
 }
 
-export interface ActionsConfig<KA extends KeyOfRecordActions = string, KAF extends KA = KA> {
-  actions: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>;
+export interface ActionsConfig<KA extends PropertyKey, KAF extends OnlyNonNumericStringKeys<KA> = OnlyNonNumericStringKeys<KA>> {
   autoFocus?: (KA & KAF) | boolean;
   autoFocusTargetAction?: AutoFocusTargetAction;
   actionsAlign?: DialogActionsAlignValues;
 }
 
 export interface NgxMgwDialogMatDialogConfig<
-  KAction extends KeyOfRecordActions = string,
-  KAutoFocus extends KAction = KAction,
   TTitle extends string | TemplateRef<unknown> = string | TemplateRef<unknown>,
   TContent extends string | MessageHtml | TemplateRef<unknown> | Array<string | DialogContent<string & never>> =
     | string
@@ -57,8 +55,7 @@ export interface NgxMgwDialogMatDialogConfig<
 > {
   title?: TTitle | TitleConfig<TTitleConfig>;
   content?: TContent;
-  actionsConfig?: ActionsConfig<KAction, KAutoFocus>;
-  dialogConfig?: DialogConfigValue<KAction>;
+  dialogConfig?: Omit<MatDialogConfig<never>, 'data' | 'autoFocus'>;
 }
 
 function isSimpleTypeValue(value: unknown): value is string | number | boolean | symbol | undefined {
@@ -79,12 +76,12 @@ function isAutoFocusTargetActionValue(value: AutoFocusTargetAction | undefined):
   return exhaustiveCheck;
 }
 
-function getAutoFocusValueButtonTarget<KA extends KeyOfRecordActions>(autoFocusValue: KA): string {
+function getAutoFocusValueButtonTarget<K extends string>(autoFocusValue: K): string {
   return `button[name="btn-${autoFocusValue}"]`;
 }
 
-function getAutoFocusTargetActionValue<KA extends KeyOfRecordActions>(
-  actions: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton> | undefined,
+function getAutoFocusTargetActionValue<K extends PropertyKey>(
+  actions: Record<K, string | DialogActionButton> | undefined,
   autoFocusTargetAction: AutoFocusTargetAction | undefined
 ): string {
   if (isAutoFocusTargetActionValue(autoFocusTargetAction)) {
@@ -93,7 +90,8 @@ function getAutoFocusTargetActionValue<KA extends KeyOfRecordActions>(
     const actionsKeysNb = actionsKeys?.length;
     if (actionsKeysNb) {
       // on a des actions on va renvoyer le nom du bouton (premier ou dernier)
-      return getAutoFocusValueButtonTarget(autoFocusTargetAction === 'first-action' ? actionsKeys[0] : actionsKeys[actionsKeysNb - 1]);
+      const autoFocusIndex: number = autoFocusTargetAction === 'first-action' ? 0 : actionsKeysNb - 1;
+      return getAutoFocusValueButtonTarget(actionsKeys[autoFocusIndex]);
     }
     // pas d'action on prendra l'action par défaut
     return AUTO_FOCUS_TARGET_FIRST_TABBABLE;
@@ -102,7 +100,7 @@ function getAutoFocusTargetActionValue<KA extends KeyOfRecordActions>(
   return autoFocusTargetAction ?? AUTO_FOCUS_TARGET_FIRST_TABBABLE;
 }
 
-function getAutoFocusValue<KA extends KeyOfRecordActions>(autoFocus: KA | false): string | false {
+function getAutoFocusValue<K extends string>(autoFocus: K | false): string | false {
   return autoFocus === false ? false : getAutoFocusValueButtonTarget(autoFocus);
 }
 
@@ -161,29 +159,28 @@ export class NgxMgwDialogMatDialogService {
   private readonly matDialog = inject(MatDialog);
 
   private dialogOpen<
-    KA extends KeyOfRecordActions,
-    KAF extends KA = KA,
-    TR extends ResultDialog.Close = ResultDialog.Close,
-    T = unknown,
-    TC extends { [K in keyof TC]: AbstractControl<T> } = never,
+    TR extends ResultDialog.Close,
+    KA extends PropertyKey,
+    KAF extends OnlyNonNumericStringKeys<KA> & string = never,
+    TC extends { [K in keyof TC]: AbstractControl<unknown> } = never,
     KF extends keyof TC & string = never,
     KFE extends KF = KF
   >(
     title: string | TemplateRef<unknown> | TitleConfig | undefined,
     content: string | MessageHtml | TemplateRef<unknown> | Array<string | DialogContent<KF & KFE>> | undefined,
-    dialogConfig: DialogConfigValue<KA> | undefined,
-    actions?: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>,
+    dialogConfig: DialogConfigValue | undefined,
+    actions?: Record<KA, string | DialogActionButton>,
     autoFocus?: (KA & KAF) | boolean,
     actionsAlign?: DialogActionsAlignValues,
     autoFocusTargetAction?: AutoFocusTargetAction,
     formElems?: Record<KF, DialogFormElemConfig>,
     formGroup?: FormGroup<TC>
-  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA, TR>> {
+  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA, TC, KF, KFE>, NgxMgwDialogMatDialogResult<TR, KA>> {
     // récupération titre config (si title simple alors pas de noCloseButton)
     const titleConfig: TitleConfig | undefined =
       typeof title === 'string' || title instanceof TemplateRef ? ({ title } satisfies TitleConfig<string | TemplateRef<unknown>>) : title;
 
-    const config: NgxMgwDialogMatDialogData<KA, T, TC, KF, KFE> = {
+    const config: NgxMgwDialogMatDialogData<KA, TC, KF, KFE> = {
       title: titleConfig?.title,
       content,
       actions,
@@ -197,8 +194,8 @@ export class NgxMgwDialogMatDialogService {
     // la valeur undefined doit devenir true (comportement par défaut si autoFocus non précisé on focus sur le premier bouton)
     const autoFocusValue = autoFocus === true || autoFocus === undefined ? getAutoFocusTargetActionValue(actions, autoFocusTargetAction) : getAutoFocusValue(autoFocus);
 
-    return this.matDialog.open<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogData<KA, T, TC, KF, KFE>, NgxMgwDialogMatDialogResult<KA, TR>>(
-      NgxMgwDialogMatDialogComponent<KA>,
+    return this.matDialog.open<NgxMgwDialogMatDialogComponent<KA, TC, KF, KFE>, NgxMgwDialogMatDialogData<KA, TC, KF, KFE>, NgxMgwDialogMatDialogResult<TR, KA>>(
+      NgxMgwDialogMatDialogComponent<KA, TC, KF, KFE>,
       {
         ...dialogConfig,
         data: config,
@@ -208,83 +205,84 @@ export class NgxMgwDialogMatDialogService {
   }
 
   private dialogOpenForm<
-    KA extends KeyOfRecordActions,
-    KAF extends KA = KA,
-    T = unknown,
-    TC extends { [K in keyof TC]: AbstractControl<T> } = never,
-    KF extends keyof TC & string = never,
-    KFE extends KF = KF
+    TC extends { [K in keyof TC]: AbstractControl<unknown> },
+    KF extends keyof TC & string,
+    KFE extends KF,
+    TR extends ResultDialog.Close,
+    KA extends PropertyKey,
+    KAF extends OnlyNonNumericStringKeys<KA> & string = never
   >(
     title: string | TemplateRef<unknown> | TitleConfig | undefined,
     content: DialogContent<KF & KFE> | Array<string | DialogContent<KF & KFE>>,
     formElems: Record<KF, DialogFormElemConfig>,
     formGroup: FormGroup<TC>,
-    dialogConfig: DialogConfigValue<KA> | undefined,
-    actions?: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton> | undefined,
+    dialogConfig: DialogConfigValue | undefined,
+    actions?: Record<KA, string | DialogActionButton>,
     autoFocus?: (KA & KAF) | boolean,
     actionsAlign?: DialogActionsAlignValues,
     autoFocusTargetAction?: AutoFocusTargetAction
-  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA>> {
+  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA, TC, KF, KFE>, NgxMgwDialogMatDialogResult<TR, KA>> {
     // dialog avec formulaire et content
     const contentList = Array.isArray(content) ? content : [content];
-    return this.dialogOpen(title, contentList, dialogConfig, actions, autoFocus, actionsAlign, autoFocusTargetAction, formElems, formGroup);
+    return this.dialogOpen<TR, KA, KAF, TC, KF, KFE>(title, contentList, dialogConfig, actions, autoFocus, actionsAlign, autoFocusTargetAction, formElems, formGroup);
   }
 
-  private dialogOpenActions<KA extends KeyOfRecordActions, KAF extends KA = KA, TR extends ResultDialog.Close = ResultDialog.Close>(
-    title: string | TemplateRef<unknown> | TitleConfig | undefined,
+  private dialogOpenActions<KA extends PropertyKey, KAF extends OnlyNonNumericStringKeys<KA> & string, TR extends ResultDialog.Close>(
     content: string | MessageHtml | TemplateRef<unknown> | Array<string | DialogContent<string & never>> | undefined,
-    dialogConfig: DialogConfigValue<KA> | undefined,
-    actions: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton> | undefined,
-    autoFocusOrDialogConfig: (KA & KAF) | boolean | DialogConfigValue<KA> | undefined,
-    actionsAlign: DialogActionsAlignValues | undefined
-  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA, TR>> {
+    dialogConfig: DialogConfigValue | undefined,
+    actions: Record<KA, string | DialogActionButton> | undefined,
+    autoFocusOrDialogConfig: (KA & KAF) | boolean | DialogConfigValue | undefined,
+    actionsAlign: DialogActionsAlignValues | undefined,
+    title?: string | TemplateRef<unknown> | TitleConfig
+  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<TR, KA>> {
     // récupération bonne valeur de dialogConfig et autoFocus
     // on teste si on a une valeur autoFocus dans le paramètre autoFocusOrDialogConfig
     if (isSimpleTypeValue(autoFocusOrDialogConfig)) {
       // autoFocusOrDialogConfig est l'autoFocus et dalogConfig est dans dalogConfig
-      return this.dialogOpen<KA, KAF, TR, never, never, never, never>(title, content, dialogConfig, actions, autoFocusOrDialogConfig, actionsAlign);
+      return this.dialogOpen<TR, KA, KAF>(title, content, dialogConfig, actions, autoFocusOrDialogConfig, actionsAlign);
     }
     // autoFocusOrDialogConfig est le dialogConfig et on n'a pas d'autoFocus (et pas non plus d'autres paramètres pour les actions)
-    return this.dialogOpen<KA, KAF, TR, never, never, never, never>(title, content, autoFocusOrDialogConfig, actions);
+    return this.dialogOpen<TR, KA>(title, content, autoFocusOrDialogConfig, actions);
   }
 
-  private dialogOpenActionsConfig<KA extends KeyOfRecordActions, KAF extends KA = KA>(
+  private dialogOpenActionsConfig<KA extends PropertyKey, KAF extends OnlyNonNumericStringKeys<KA> & string, TR extends ResultDialog.Close>(
     title: string | TemplateRef<unknown> | TitleConfig | undefined,
     content: string | MessageHtml | TemplateRef<unknown> | Array<string | DialogContent<string & never>> | undefined,
-    dialogConfig: DialogConfigValue<KA> | undefined,
+    dialogConfig: DialogConfigValue | undefined,
+    actions: Record<KA, string | DialogActionButton> | undefined,
     actionsConfig: ActionsConfig<KA, KAF> | undefined
-  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA>> {
-    if (actionsConfig?.actions) {
+  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<TR, KA>> {
+    if (actions) {
       // on a des actions
-      return this.dialogOpen(
+      return this.dialogOpen<TR, KA, KAF>(
         title,
         content,
         dialogConfig,
-        actionsConfig.actions,
-        actionsConfig.autoFocus,
-        actionsConfig.actionsAlign,
-        actionsConfig.autoFocusTargetAction
+        actions,
+        actionsConfig?.autoFocus,
+        actionsConfig?.actionsAlign,
+        actionsConfig?.autoFocusTargetAction
       );
     }
     // ouverture du dialog sans actions
-    return this.dialogOpen(title, content, dialogConfig);
+    return this.dialogOpen<TR, KA>(title, content, dialogConfig);
   }
 
-  openDialog<KA extends KeyOfRecordActions, KAF extends KA = KA>(
+  openDialog<TR extends ResultDialog.Close, KA extends PropertyKey, KAF extends OnlyNonNumericStringKeys<KA> = OnlyNonNumericStringKeys<KA>>(
     title: string | TemplateRef<unknown> | TitleConfig,
     content?: string | MessageHtml | TemplateRef<unknown> | Array<string | DialogContent<string & never>>,
-    actions?: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>,
+    actions?: Record<KA, string | DialogActionButton>,
     autoFocus?: (KA & KAF) | boolean,
     actionsAlign?: DialogActionsAlignValues,
-    dialogConfig?: Omit<MatDialogConfig<NgxMgwDialogMatDialogData<KA>>, 'data' | 'autoFocus'>
-  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA>>;
+    dialogConfig?: Omit<MatDialogConfig<never>, 'data' | 'autoFocus'>
+  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, OnlyNonNumericStringKeys<KA> | TR>;
 
-  openDialog<KA extends KeyOfRecordActions>(
+  openDialog<TR extends ResultDialog.Close, KA extends PropertyKey>(
     title: string | TemplateRef<unknown> | TitleConfig,
     content: string | MessageHtml | TemplateRef<unknown> | Array<string | DialogContent<string & never>>,
-    actions: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>,
-    dialogConfig: Omit<MatDialogConfig<NgxMgwDialogMatDialogData<KA>>, 'data' | 'autoFocus'>
-  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA>>;
+    actions: Record<KA, string | DialogActionButton>,
+    dialogConfig: Omit<MatDialogConfig<never>, 'data' | 'autoFocus'>
+  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, OnlyNonNumericStringKeys<KA> | TR>;
 
   /**
    *
@@ -296,95 +294,99 @@ export class NgxMgwDialogMatDialogService {
    *  - Sinon on focus sur le bouton avec la valeur nom = `K`
    * @returns
    */
-  openDialog<KA extends KeyOfRecordActions, KAF extends KA = KA>(
+  openDialog<TR extends ResultDialog.Close, KA extends PropertyKey, KAF extends OnlyNonNumericStringKeys<KA> = OnlyNonNumericStringKeys<KA>>(
     title: string | TemplateRef<unknown> | TitleConfig,
     content?: string | MessageHtml | TemplateRef<unknown> | Array<string | DialogContent<string & never>>,
-    actions?: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>,
-    autoFocusOrDialogConfig?: (KA & KAF) | boolean | DialogConfigValue<KA>,
+    actions?: Record<KA, string | DialogActionButton>,
+    autoFocusOrDialogConfig?: (KA & KAF) | boolean | DialogConfigValue,
     actionsAlign?: DialogActionsAlignValues,
-    dialogConfig?: DialogConfigValue<KA>
-  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA>> {
+    dialogConfig?: DialogConfigValue
+  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<TR, KA>> {
     // on va appeler dialogOpen en passant directement le titre et le content
     // le dialogConfig va être récupérer dans le bon paramètre
-    return this.dialogOpenActions(title, content, dialogConfig, actions, autoFocusOrDialogConfig, actionsAlign);
+    return this.dialogOpenActions<KA, KAF, TR>(content, dialogConfig, actions, autoFocusOrDialogConfig, actionsAlign, title);
   }
 
-  openDialogHtml<KA extends KeyOfRecordActions, KAF extends KA = KA>(
+  openDialogHtml<TR extends ResultDialog.Close, KA extends PropertyKey, KAF extends OnlyNonNumericStringKeys<KA> = OnlyNonNumericStringKeys<KA>>(
     title: string | TitleConfig<string>,
     content?: string | Array<string | DialogContent<string & never>>,
-    actions?: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>,
+    actions?: Record<KA, string | DialogActionButton>,
     autoFocus?: (KA & KAF) | boolean,
     actionsAlign?: DialogActionsAlignValues,
-    dialogConfig?: Omit<MatDialogConfig<NgxMgwDialogMatDialogData<KA>>, 'data' | 'autoFocus'>
-  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA>>;
+    dialogConfig?: Omit<MatDialogConfig<never>, 'data' | 'autoFocus'>
+  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, OnlyNonNumericStringKeys<KA> | TR>;
 
-  openDialogHtml<KA extends KeyOfRecordActions>(
+  openDialogHtml<TR extends ResultDialog.Close, KA extends PropertyKey>(
     title: string | TitleConfig<string>,
     content: string | Array<string | DialogContent<string & never>>,
-    actions: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>,
-    dialogConfig: Omit<MatDialogConfig<NgxMgwDialogMatDialogData<KA>>, 'data' | 'autoFocus'>
-  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA>>;
+    actions: Record<KA, string | DialogActionButton>,
+    dialogConfig: Omit<MatDialogConfig<never>, 'data' | 'autoFocus'>
+  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, OnlyNonNumericStringKeys<KA> | TR>;
 
-  openDialogHtml<KA extends KeyOfRecordActions, KAF extends KA = KA>(
+  openDialogHtml<TR extends ResultDialog.Close, KA extends PropertyKey, KAF extends OnlyNonNumericStringKeys<KA> = OnlyNonNumericStringKeys<KA>>(
     title: string | TitleConfig<string>,
     content?: string | Array<string | DialogContent<string & never>>,
-    actions?: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>,
-    autoFocusOrDialogConfig?: (KA & KAF) | boolean | DialogConfigValue<KA>,
+    actions?: Record<KA, string | DialogActionButton>,
+    autoFocusOrDialogConfig?: (KA & KAF) | boolean | DialogConfigValue,
     actionsAlign?: DialogActionsAlignValues,
-    dialogConfig?: DialogConfigValue<KA>
-  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA>> {
+    dialogConfig?: DialogConfigValue
+  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<TR, KA>> {
     // on va appeler dialogOpen en passant directement le titre et le content qui seront converti en objet MessageHtml
-    return this.dialogOpenActions(getDialogTitleHtml(title), getDialogContentHtml(content), dialogConfig, actions, autoFocusOrDialogConfig, actionsAlign);
+    return this.dialogOpenActions<KA, KAF, TR>(getDialogContentHtml(content), dialogConfig, actions, autoFocusOrDialogConfig, actionsAlign, getDialogTitleHtml(title));
   }
 
-  openDialogNoCloseButton<KA extends KeyOfRecordActions, KAF extends KA = KA>(
+  openDialogNoCloseButton<KA extends PropertyKey, KAF extends OnlyNonNumericStringKeys<KA> = OnlyNonNumericStringKeys<KA>>(
     title: string | MessageHtml | TemplateRef<unknown>,
     content?: string | MessageHtml | TemplateRef<unknown> | Array<string | DialogContent<string & never>>,
-    actions?: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>,
+    actions?: Record<KA, string | DialogActionButton>,
     autoFocus?: (KA & KAF) | boolean,
     actionsAlign?: DialogActionsAlignValues,
-    dialogConfig?: DialogConfigValue<KA>
-  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA, never>>;
+    dialogConfig?: Omit<MatDialogConfig<never>, 'data' | 'autoFocus'>
+  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, OnlyNonNumericStringKeys<KA>>;
 
-  openDialogNoCloseButton<KA extends KeyOfRecordActions>(
+  openDialogNoCloseButton<KA extends PropertyKey>(
     title: string | MessageHtml | TemplateRef<unknown>,
     content: string | MessageHtml | TemplateRef<unknown> | Array<string | DialogContent<string & never>>,
-    actions: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>,
-    dialogConfig: DialogConfigValue<KA>
-  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA, never>>;
+    actions: Record<KA, string | DialogActionButton>,
+    dialogConfig: Omit<MatDialogConfig<never>, 'data' | 'autoFocus'>
+  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, OnlyNonNumericStringKeys<KA>>;
 
-  openDialogNoCloseButton<KA extends KeyOfRecordActions, KAF extends KA = KA>(
+  openDialogNoCloseButton<KA extends PropertyKey, KAF extends OnlyNonNumericStringKeys<KA> = OnlyNonNumericStringKeys<KA>>(
     title: string | MessageHtml | TemplateRef<unknown>,
     content?: string | MessageHtml | TemplateRef<unknown> | Array<string | DialogContent<string & never>>,
-    actions?: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>,
-    autoFocusOrDialogConfig?: (KA & KAF) | boolean | DialogConfigValue<KA>,
+    actions?: Record<KA, string | DialogActionButton>,
+    autoFocusOrDialogConfig?: (KA & KAF) | boolean | DialogConfigValue,
     actionsAlign?: DialogActionsAlignValues,
-    dialogConfig?: DialogConfigValue<KA>
-  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA, never>> {
+    dialogConfig?: DialogConfigValue
+  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, OnlyNonNumericStringKeys<KA>> {
     // ajout du paramètre noCloseButton
     // on va appeler dialogOpen en passant le titre (en le convertissant en TitleConfig avec noCloseButton), le content sera appelé directement
-    return this.dialogOpenActions<KA, KAF, never>({ title, noCloseButton: true }, content, dialogConfig, actions, autoFocusOrDialogConfig, actionsAlign);
+    return this.dialogOpenActions<KA, KAF, never>(content, dialogConfig, actions, autoFocusOrDialogConfig, actionsAlign, { title, noCloseButton: true });
   }
 
-  openDialogConfig<KA extends KeyOfRecordActions, KAF extends KA = KA>(
-    config: NgxMgwDialogMatDialogConfig<KA, KAF>
-  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA>> {
+  openDialogConfig<TR extends ResultDialog.Close, KA extends PropertyKey, KAF extends OnlyNonNumericStringKeys<KA> = OnlyNonNumericStringKeys<KA>>(
+    config: NgxMgwDialogMatDialogConfig,
+    actions?: Record<KA, string | DialogActionButton>,
+    actionsConfig?: ActionsConfig<KA, KAF>
+  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, OnlyNonNumericStringKeys<KA> | TR> {
     // récupération des paramètres directement depuis l'objet config
-    return this.dialogOpenActionsConfig(config.title, config.content, config.dialogConfig, config.actionsConfig);
+    return this.dialogOpenActionsConfig<KA, KAF, TR>(config.title, config.content, config.dialogConfig, actions, actionsConfig);
   }
 
-  openDialogConfigHtml<KA extends KeyOfRecordActions, KAF extends KA = KA>(
-    config: NgxMgwDialogMatDialogConfig<KA, KAF, string, string | Array<string | DialogContent<string & never>>, string>
-  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA>> {
+  openDialogConfigHtml<TR extends ResultDialog.Close, KA extends PropertyKey, KAF extends OnlyNonNumericStringKeys<KA> = OnlyNonNumericStringKeys<KA>>(
+    config: NgxMgwDialogMatDialogConfig<string, string | Array<string | DialogContent<string & never>>, string>,
+    actions?: Record<KA, string | DialogActionButton>,
+    actionsConfig?: ActionsConfig<KA, KAF>
+  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, OnlyNonNumericStringKeys<KA> | TR> {
     // récupération des paramètres directement depuis l'objet config
-    return this.dialogOpenActionsConfig(getDialogTitleHtml(config.title), getDialogContentHtml(config.content), config.dialogConfig, config.actionsConfig);
+    return this.dialogOpenActionsConfig<KA, KAF, TR>(getDialogTitleHtml(config.title), getDialogContentHtml(config.content), config.dialogConfig, actions, actionsConfig);
   }
 
   openDialogForm<
-    KA extends KeyOfRecordActions,
-    KAF extends KA = KA,
-    T = unknown,
-    TC extends { [K in keyof TC]: AbstractControl<T> } = never,
+    TR extends ResultDialog.Close,
+    KA extends PropertyKey,
+    KAF extends OnlyNonNumericStringKeys<KA> = OnlyNonNumericStringKeys<KA>,
+    TC extends { [K in keyof TC]: AbstractControl<unknown> } = never,
     KF extends keyof TC & string = never,
     KFE extends KF = KF
   >(
@@ -392,16 +394,16 @@ export class NgxMgwDialogMatDialogService {
     formElems: Record<KF, DialogFormElemConfig>,
     formGroup: FormGroup<TC>,
     title?: string | TemplateRef<unknown> | TitleConfig,
-    actions?: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>,
+    actions?: Record<KA, string | DialogActionButton>,
     autoFocus?: (KA & KAF) | boolean,
     actionsAlign?: DialogActionsAlignValues,
-    dialogConfig?: DialogConfigValue<KA>
-  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA>>;
+    dialogConfig?: Omit<MatDialogConfig<never>, 'data' | 'autoFocus'>
+  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA, TC, KF, KFE>, OnlyNonNumericStringKeys<KA> | TR>;
 
   openDialogForm<
-    KA extends KeyOfRecordActions,
-    T = unknown,
-    TC extends { [K in keyof TC]: AbstractControl<T> } = never,
+    TR extends ResultDialog.Close,
+    KA extends PropertyKey,
+    TC extends { [K in keyof TC]: AbstractControl<unknown> } = never,
     KF extends keyof TC & string = never,
     KFE extends KF = KF
   >(
@@ -409,15 +411,15 @@ export class NgxMgwDialogMatDialogService {
     formElems: Record<KF, DialogFormElemConfig>,
     formGroup: FormGroup<TC>,
     title: string | TemplateRef<unknown> | TitleConfig,
-    actions: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>,
-    dialogConfig: DialogConfigValue<KA>
-  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA>>;
+    actions: Record<KA, string | DialogActionButton>,
+    dialogConfig: Omit<MatDialogConfig<never>, 'data' | 'autoFocus'>
+  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA, TC, KF, KFE>, OnlyNonNumericStringKeys<KA> | TR>;
 
   openDialogForm<
-    KA extends KeyOfRecordActions,
-    KAF extends KA = KA,
-    T = unknown,
-    TC extends { [K in keyof TC]: AbstractControl<T> } = never,
+    TR extends ResultDialog.Close,
+    KA extends PropertyKey,
+    KAF extends OnlyNonNumericStringKeys<KA> = OnlyNonNumericStringKeys<KA>,
+    TC extends { [P in keyof TC]: AbstractControl<unknown> } = never,
     KF extends keyof TC & string = never,
     KFE extends KF = KF
   >(
@@ -425,52 +427,79 @@ export class NgxMgwDialogMatDialogService {
     formElems: Record<KF, DialogFormElemConfig>,
     formGroup: FormGroup<TC>,
     title?: string | TemplateRef<unknown> | TitleConfig,
-    actions?: Record<KA, string | DialogActionButton> | Map<KA, string | DialogActionButton>,
-    autoFocusOrDialogConfig?: (KA & KAF) | boolean | DialogConfigValue<KA>,
+    actions?: Record<KA, string | DialogActionButton>,
+    autoFocusOrDialogConfig?: (KA & KAF) | boolean | DialogConfigValue,
     actionsAlign?: DialogActionsAlignValues,
-    dialogConfig?: DialogConfigValue<KA>
-  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA>> {
+    dialogConfig?: DialogConfigValue
+  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA, TC, KF, KFE>, NgxMgwDialogMatDialogResult<TR, KA>> {
     // on rajoute les éléments du formulaire
     // récupération bonne valeur de dialogConfig et autoFocus
     // on teste si on a une valeur autoFocus dans le paramètre autoFocusOrDialogConfig
     if (isSimpleTypeValue(autoFocusOrDialogConfig)) {
       // autoFocusOrDialogConfig est l'autoFocus et dalogConfig est dans dalogConfig
-      return this.dialogOpenForm(title, content, formElems, formGroup, dialogConfig, actions, autoFocusOrDialogConfig, actionsAlign);
+      return this.dialogOpenForm<TC, KF, KFE, TR, KA, KAF>(title, content, formElems, formGroup, dialogConfig, actions, autoFocusOrDialogConfig, actionsAlign);
     }
     // autoFocusOrDialogConfig est le dialogConfig et on n'a pas d'autoFocus
-    return this.dialogOpenForm(title, content, formElems, formGroup, autoFocusOrDialogConfig, actions);
+    return this.dialogOpenForm<TC, KF, KFE, TR, KA>(title, content, formElems, formGroup, autoFocusOrDialogConfig, actions);
   }
 
   openDialogFormConfig<
-    KA extends KeyOfRecordActions,
-    KAF extends KA = KA,
-    T = unknown,
-    TC extends { [K in keyof TC]: AbstractControl<T> } = never,
+    TR extends ResultDialog.Close,
+    KA extends PropertyKey,
+    KAF extends OnlyNonNumericStringKeys<KA> = OnlyNonNumericStringKeys<KA>,
+    TC extends { [P in keyof TC]: AbstractControl<unknown> } = never,
     KF extends keyof TC & string = never,
     KFE extends KF = KF
   >(
     content: DialogContent<KF & KFE> | Array<string | DialogContent<KF & KFE>>,
     formElems: Record<KF, DialogFormElemConfig>,
     formGroup: FormGroup<TC>,
-    config: Omit<NgxMgwDialogMatDialogConfig<KA, KAF>, 'content'>
-  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, NgxMgwDialogMatDialogResult<KA>> {
+    config: Omit<NgxMgwDialogMatDialogConfig, 'content'>,
+    actions?: Record<KA, string | DialogActionButton>,
+    actionsConfig?: ActionsConfig<KA, KAF>
+  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA, TC, KF, KFE>, OnlyNonNumericStringKeys<KA> | TR> {
     // récupération des paramètres directement depuis l'objet config
-    if (config.actionsConfig?.actions) {
+    if (actions) {
       // on a des actions
-      const actionsConfig: ActionsConfig<KA, KAF> = config.actionsConfig;
-      return this.dialogOpenForm(
+      return this.dialogOpenForm<TC, KF, KFE, TR, KA, KAF>(
         config.title,
         content,
         formElems,
         formGroup,
         config.dialogConfig,
-        actionsConfig.actions,
-        actionsConfig.autoFocus,
-        actionsConfig.actionsAlign,
-        actionsConfig.autoFocusTargetAction
+        actions,
+        actionsConfig?.autoFocus,
+        actionsConfig?.actionsAlign,
+        actionsConfig?.autoFocusTargetAction
       );
     }
     // ouverture du dialog sans actions
-    return this.dialogOpenForm(config.title, content, formElems, formGroup, config.dialogConfig);
+    return this.dialogOpenForm<TC, KF, KFE, TR, KA>(config.title, content, formElems, formGroup, config.dialogConfig);
+  }
+
+  openDialogNoTitle<KA extends PropertyKey, KAF extends OnlyNonNumericStringKeys<KA> = OnlyNonNumericStringKeys<KA>>(
+    content: string | MessageHtml | TemplateRef<unknown> | Array<string | DialogContent<string & never>>,
+    actions?: Record<KA, string | DialogActionButton>,
+    autoFocus?: (KA & KAF) | boolean,
+    actionsAlign?: DialogActionsAlignValues,
+    dialogConfig?: Omit<MatDialogConfig<never>, 'data' | 'autoFocus'>
+  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, OnlyNonNumericStringKeys<KA>>;
+
+  openDialogNoTitle<KA extends PropertyKey>(
+    content: string | MessageHtml | TemplateRef<unknown> | Array<string | DialogContent<string & never>>,
+    actions: Record<KA, string | DialogActionButton>,
+    dialogConfig: Omit<MatDialogConfig<never>, 'data' | 'autoFocus'>
+  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, OnlyNonNumericStringKeys<KA>>;
+
+  openDialogNoTitle<KA extends PropertyKey, KAF extends OnlyNonNumericStringKeys<KA> = OnlyNonNumericStringKeys<KA>>(
+    content: string | MessageHtml | TemplateRef<unknown> | Array<string | DialogContent<string & never>>,
+    actions?: Record<KA, string | DialogActionButton>,
+    autoFocusOrDialogConfig?: (KA & KAF) | boolean | DialogConfigValue,
+    actionsAlign?: DialogActionsAlignValues,
+    dialogConfig?: DialogConfigValue
+  ): MatDialogRef<NgxMgwDialogMatDialogComponent<KA>, OnlyNonNumericStringKeys<KA>> {
+    // ajout du paramètre noCloseButton
+    // on va appeler dialogOpen en ne passant pas le titre, le content sera appelé directement
+    return this.dialogOpenActions<KA, KAF, never>(content, dialogConfig, actions, autoFocusOrDialogConfig, actionsAlign);
   }
 }

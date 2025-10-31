@@ -3,10 +3,18 @@ import { ChangeDetectionStrategy, Component, inject, TemplateRef, ViewChild } fr
 import { FormBuilder, FormControl, FormGroup, FormsModule, Validators } from '@angular/forms';
 
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 
-import { DialogActionButton, NgxMgwDialogMatDialogService, ResultDialog } from '../../../../ngx-mgw-dialog-mat-dialog/src/public-api';
+import {
+  DialogActionButton,
+  NgxMgwDialogMatDialogComponent,
+  NgxMgwDialogMatDialogData,
+  NgxMgwDialogMatDialogService,
+  OnlyNonNumericStringKeys,
+  ResultDialog
+} from '../../../../ngx-mgw-dialog-mat-dialog/src/public-api';
 
 const boutonBis: DialogActionButton = {
   libelle: 'non',
@@ -18,6 +26,7 @@ const boutonBis: DialogActionButton = {
 interface TestFormGroup {
   animal: FormControl<string>;
   autre: FormControl<string>;
+  1: FormControl<string>;
 }
 
 @Component({
@@ -33,6 +42,7 @@ export class DialogTestComponent {
   @ViewChild('customTitle') customTitle: TemplateRef<unknown> | undefined;
 
   private readonly ngxMgwDialogMatDialogService = inject(NgxMgwDialogMatDialogService);
+  private readonly matDialog = inject(MatDialog);
 
   private readonly testFormGroup: FormGroup<TestFormGroup>;
 
@@ -42,7 +52,8 @@ export class DialogTestComponent {
     const fb = new FormBuilder();
     this.testFormGroup = fb.nonNullable.group<TestFormGroup>({
       animal: fb.nonNullable.control<string>({ value: '', disabled: false }, Validators.pattern(/[A-Z]/)),
-      autre: fb.nonNullable.control<string>('')
+      autre: fb.nonNullable.control<string>(''),
+      1: fb.nonNullable.control<string>('')
     });
   }
 
@@ -52,17 +63,38 @@ export class DialogTestComponent {
         libelle: 'Coucou',
         rr: 'rr'
       },
-      b: boutonBis,
-      c: 'Codscds',
-      1: 'pas bon !!!'
+      4: 'fsdml',
+      '2': 'dfsd',
+      z: boutonBis,
+      ok: { disabledIfFormInvalid: true, libelle: 'Ok' } satisfies DialogActionButton
     };
 
+    this.matDialog
+      .open<NgxMgwDialogMatDialogComponent, NgxMgwDialogMatDialogData<'a'>, string & OnlyNonNumericStringKeys<keyof typeof actions>>(NgxMgwDialogMatDialogComponent, {
+        data: {
+          content: [
+            {
+              rubrique: { contenu: 'Sans <i>subtitle</i> mais avec <u>html</u>', isHtml: true, type: 'error' }
+            }
+          ],
+          actions
+        }
+      })
+      .afterClosed()
+      .subscribe((res) => {
+        if (res) {
+          console.log('Close by button with key: ', res);
+        } else {
+          console.log('Close');
+        }
+      });
+
     this.ngxMgwDialogMatDialogService
-      .openDialogFormConfig(
+      .openDialog(
+        'Test dialog',
         [
           {
-            rubrique: { contenu: 'Sans <i>subtitle</i> mais avec <u>html</u>', isHtml: true, type: 'error' },
-            formElem: 'animal'
+            rubrique: { contenu: 'Sans <i>subtitle</i> mais avec <u>html</u>', isHtml: true, type: 'error' }
           },
           {
             rubrique: { contenu: "C'est <em>un</em> <mark>avertissement</mark> !", isHtml: true, type: 'warning' }
@@ -74,42 +106,17 @@ export class DialogTestComponent {
           { rubrique: { contenu: "Je t'<b>informe</b>. C'est tout !", isHtml: true, type: 'info' } },
           { rubrique: { contenu: 'Aucun type spécifique', isHtml: true, type: 'none' } }
         ],
+        actions,
+        'ok',
+        'center',
         {
-          animal: {
-            errorLabel: 'Saisie !!!!',
-            hintText: 'Chat, chien, ...',
-            width: '100%',
-            maxWidth: '500px',
-            labelPosition: 'before',
-            isSelect: true,
-            values: [
-              { value: 1, texte: 'Coucou' },
-              { value: 2, texte: 'Coucccou' }
-            ],
-            selectResetText: ' * Aucun'
-          }
-        },
-        this.testFormGroup,
-        {
-          actionsConfig: {
-            actions,
-            autoFocus: 'b'
-          },
-          dialogConfig: {
-            width: '450px'
-          },
-          title: {
-            title: {
-              contenu: 'Mon <i>appli</i> <strong>super</strong> !',
-              isHtml: true
-            }
-          }
+          width: '450px'
         }
       )
       .afterClosed()
       .subscribe((result) => {
         if (result === ResultDialog.Close) {
-          console.log('The dialog was closed by close button', result, typeof result, this.testFormGroup.value);
+          console.log('The dialog was closed by close button.', result, typeof result, this.testFormGroup.value);
         } else if (result) {
           console.log('The dialog was closed by button :', result, typeof result, this.testFormGroup.value);
         } else {
